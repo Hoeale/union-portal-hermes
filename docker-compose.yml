@@ -1,0 +1,102 @@
+services:
+  # MySQL 数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: union-portal-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 .env.docker 中设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-union_portal}
+      MYSQL_USER: ${MYSQL_USER:-union_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请在 .env.docker 中设置 MYSQL_PASSWORD}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"  # 仅本地可访问，生产环境勿暴露
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - union-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: union-portal-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"  # 仅本地可访问
+    volumes:
+      - redis_data:/data
+    networks:
+      - union-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Next.js 应用服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: union-portal-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-union_user}:${MYSQL_PASSWORD:?请设置 MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-union_portal}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?请在 .env.docker 中设置 ADMIN_SESSION_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?请在 .env.docker 中设置 ADMIN_PASSWORD}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      NODE_ENV: production
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - union-network
+    env_file:
+      - .env.docker
+
+  # Nginx 反向代理（可选，用于生产环境）
+  nginx:
+    image: nginx:alpine
+    container_name: union-portal-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - union-network
+    profiles:
+      - production
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  union-network:
+    driver: bridge

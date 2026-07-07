@@ -1,0 +1,499 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model NewsCategory {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  name        String   @unique @db.VarChar(50)
+  slug        String   @unique @db.VarChar(50)
+  description String?  @db.Text
+  color       String?  @db.VarChar(20)
+  orderIndex  Int      @default(0) @map("order_index")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("news_categories")
+}
+
+model News {
+  id                   String        @id @default(uuid()) @map("_id") @db.VarChar(36)
+  title                String        @db.Text
+  category             String?       @db.VarChar(50)
+  content              String        @db.LongText
+  imageUrl             String?       @map("image_url") @db.Text
+  imageSourceType      String        @default("local") @map("image_source_type") @db.VarChar(20)  // local, external (OSS)
+  isCarousel           Boolean       @default(false) @map("is_carousel")
+  carouselOrder        Int?          @map("carousel_order")
+  isNotice             Boolean       @default(false) @map("is_notice")  // 是否展示到通知公告栏目
+  publishedAt          DateTime      @default(now()) @map("published_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  status               ContentStatus @default(pending)
+  viewCount            Int           @default(0) @map("view_count")
+  scheduledPublishAt   DateTime?     @map("scheduled_publish_at")
+  publishStatus        String        @default("immediate") @map("publish_status")  // immediate, scheduled
+
+  carouselItems        CarouselItem[]
+
+  @@index([category])
+  @@index([publishedAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
+  @@index([scheduledPublishAt])
+  @@map("news")
+}
+
+model CarouselItem {
+  id           String  @id @default(uuid()) @map("_id") @db.VarChar(36)
+  newsId       String  @map("news_id") @db.VarChar(36)
+  displayOrder Int     @unique @map("display_order")
+  imageUrl     String  @map("image_url") @db.Text
+  title        String  @db.Text
+  linkUrl      String? @map("link_url") @db.Text
+
+  news         News    @relation(fields: [newsId], references: [id], onDelete: Cascade)
+
+  @@index([newsId])
+  @@map("carousel_items")
+}
+
+model FriendlyLink {
+  id         String  @id @default(uuid()) @map("_id") @db.VarChar(36)
+  title      String  @db.VarChar(200)
+  url        String  @db.VarChar(500)
+  isRequired Boolean @default(false) @map("is_required")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("friendly_links")
+}
+
+model Admin {
+  id           String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  username     String   @unique @db.VarChar(50)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         String   @default("admin") @db.VarChar(50)  // super_admin, admin
+  nickname     String?  @db.VarChar(100)  // 昵称
+  avatar       String?  @db.Text  // 头像URL
+  bio          String?  @db.Text  // 简介
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @map("updated_at")
+  lastLoginAt  DateTime? @map("last_login_at")
+
+  @@index([role])
+  @@index([isActive])
+  @@map("admins")
+}
+
+model ReviewLog {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  contentType String   @map("content_type") @db.VarChar(50)  // news, policy
+  contentId   String   @map("content_id") @db.VarChar(36)
+  action      String   @db.VarChar(50)  // submit, approve, reject, request_changes
+  reviewer    String   @db.VarChar(100)  // 审核人
+  comment     String?  @db.Text  // 审核意见
+  statusBefore String  @map("status_before") @db.VarChar(50)
+  statusAfter String   @map("status_after") @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([contentType, contentId])
+  @@index([reviewer])
+  @@index([action])
+  @@index([createdAt])
+  @@map("review_logs")
+}
+
+model SiteInfo {
+  id        String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  key       String   @unique @db.VarChar(100)
+  content   String   @db.LongText
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_info")
+}
+
+// 系统设置（用于管理各种开关和配置）
+model SystemSetting {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  key         String   @unique @db.VarChar(100)  // 配置键名
+  value       String   @db.Text  // 配置值（JSON格式）
+  description String?  @db.VarChar(500)  // 配置说明
+  category    String   @default("general") @db.VarChar(50)  // 分类: general, review, security
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("system_settings")
+}
+
+model Service {
+  id                     String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  title                  String   @db.VarChar(200)
+  description            String   @db.Text
+  process                String?  @map("process") @db.Text
+  requirements           String?  @map("requirements") @db.Text
+  isActive               Boolean  @default(true)
+  orderIndex             Int      @default(0) @map("order_index")
+  
+  // 显示控制字段
+  icon                   String?  @db.VarChar(50)   // FontAwesome icon name, e.g., "faUserPlus"
+  gradient               String?  @db.VarChar(50)   // Tailwind gradient classes, e.g., "from-blue-500 to-blue-600"
+  routePath              String?  @map("route_path") @db.VarChar(100)  // Custom route path for service detail page
+  
+  // 旧版字段（保留向后兼容）
+  serviceIntro           String?  @map("service_intro") @db.LongText
+  showServiceIntro       Boolean? @default(true) @map("show_service_intro")
+  selectionCriteria      String?  @map("selection_criteria") @db.LongText
+  showSelectionCriteria  Boolean? @default(true) @map("show_selection_criteria")
+  applicationProcess     String?  @map("application_process") @db.LongText
+  showApplicationProcess Boolean? @default(true) @map("show_application_process")
+  tips                   String?  @map("tips") @db.LongText
+  showTips               Boolean? @default(true) @map("show_tips")
+  
+  // 结构化字段（新版）
+  introText              String?  @map("intro_text") @db.Text
+  introTitle             String?  @default("服务介绍") @map("intro_title") @db.VarChar(100)
+  showIntro              Boolean  @default(true) @map("show_intro")
+  features               String?  @db.LongText  // JSON: [{title, description, color}]
+  showFeatures           Boolean  @default(true) @map("show_features")
+  steps                  String?  @db.LongText  // JSON: [{order, title, description}]
+  stepsTitle             String?  @default("使用流程") @map("steps_title") @db.VarChar(100)
+  showSteps              Boolean  @default(true) @map("show_steps")
+  tipsTitle              String?  @default("温馨提示") @map("tips_title") @db.VarChar(100)
+  
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  enableDownload         Boolean  @default(false) @map("enable_download")
+  fileName               String?  @map("file_name") @db.VarChar(500)
+  fileUrl                String?  @map("file_url") @db.Text
+  fileUrls               String?  @map("file_urls") @db.Text  // JSON array for multiple attachments
+  fileNames              String?  @map("file_names") @db.Text  // JSON array for multiple attachment names
+
+  @@index([orderIndex])
+  @@index([isActive])
+  @@map("services")
+}
+
+model Media {
+  id           String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  type         String   @db.VarChar(20)  // image, document
+  title        String   @db.VarChar(500)
+  description  String?  @db.Text
+  url          String   @db.Text
+  thumbnailUrl String?  @map("thumbnail_url") @db.Text
+  fileSize     Int      @default(0) @map("file_size")
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  width        Int?
+  height       Int?
+  tags         String?  @db.Text  // JSON数组: ["新闻", "活动"]
+  category     String?  @db.VarChar(100)
+  usageCount   Int      @default(0) @map("usage_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([category])
+  @@map("media")
+}
+
+model MediaReference {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  mediaId     String   @map("media_id") @db.VarChar(36)
+  contentType String   @map("content_type") @db.VarChar(50)  // news, policy, service
+  contentId   String   @map("content_id") @db.VarChar(36)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([mediaId, contentType, contentId])
+  @@index([mediaId])
+  @@index([contentType, contentId])
+  @@map("media_references")
+}
+
+model PageView {
+  id         String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  url        String   @db.VarChar(500)
+  title      String?  @db.VarChar(500)
+  ip         String   @db.VarChar(50)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  referer    String?  @db.VarChar(500)
+  deviceType String   @default("pc") @map("device_type") @db.VarChar(20)  // pc, mobile, tablet
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([url])
+  @@index([createdAt])
+  @@index([deviceType])
+  @@map("page_views")
+}
+
+model Policy {
+  id                 String        @id @default(uuid()) @map("_id") @db.VarChar(36)
+  title              String        @db.VarChar(500)
+  category           String        @db.VarChar(100)
+  publishDate        String        @db.VarChar(20)
+  source             String        @db.VarChar(200)
+  fileUrl            String?       @map("file_url") @db.Text
+  fileUrls           String?       @map("file_urls") @db.Text  // JSON array for multiple attachments
+  content            String        @db.LongText
+  isActive           Boolean       @default(true)
+  orderIndex         Int           @default(0) @map("order_index")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  status             ContentStatus @default(pending)
+  enableDownload     Boolean       @default(false) @map("enable_download")
+  fileName           String?       @map("file_name") @db.VarChar(500)
+  fileNames          String?       @map("file_names") @db.Text  // JSON array for multiple attachment names
+  scheduledPublishAt DateTime?     @map("scheduled_publish_at")
+  publishStatus      String        @default("immediate") @map("publish_status")  // immediate, scheduled
+  downloadCount      Int           @default(0) @map("download_count")
+
+  @@index([category])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@index([publishDate(sort: Desc)])
+  @@index([scheduledPublishAt])
+  @@map("policies")
+}
+
+model PolicyCategory {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  name        String   @unique @db.VarChar(50)  // 分类名称
+  orderIndex  Int      @default(0) @map("order_index")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@index([isActive])
+  @@map("policy_categories")
+}
+
+model Worker {
+  id              String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  name            String   @db.VarChar(100)
+  title           String   @db.VarChar(200)
+  department      String   @db.VarChar(200)
+  story           String   @map("story") @db.Text
+  imageUrl        String?  @map("image_url") @db.Text
+  imageSourceType String   @default("local") @map("image_source_type") @db.VarChar(20)  // local, external (OSS)
+  isActive        Boolean  @default(true)
+  orderIndex      Int      @default(0) @map("order_index")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([orderIndex])
+  @@index([isActive])
+  @@map("workers")
+}
+
+model Video {
+  id                 String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  title              String   @db.VarChar(500)
+  category           String   @db.VarChar(50)
+  description        String?  @db.Text
+  sourceType         String   @map("source_type") @db.VarChar(20)
+  videoUrl           String   @map("video_url") @db.Text
+  thumbnailUrl       String?  @map("thumbnail_url") @db.Text
+  duration           Int?     @map("duration")
+  fileSize           Int?     @map("file_size")
+  isActive           Boolean  @default(true) @map("is_active")
+  viewCount          Int      @default(0) @map("view_count")
+  orderIndex         Int      @default(0) @map("order_index")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  scheduledPublishAt DateTime? @map("scheduled_publish_at")
+  publishStatus      String   @default("immediate") @map("publish_status")  // immediate, scheduled
+  playCount          Int      @default(0) @map("play_count")
+  totalPlayTime      Int      @default(0) @map("total_play_time")  // 秒
+
+  @@index([category])
+  @@index([isActive])
+  @@index([createdAt(sort: Desc)])
+  @@index([scheduledPublishAt])
+  @@map("videos")
+}
+
+model Feedback {
+  id        String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  name      String   @db.VarChar(100)
+  contact   String   @db.VarChar(200)
+  content   String   @db.LongText
+  isRead    Boolean  @default(false) @map("is_read")
+  isPublic  Boolean  @default(false) @map("is_public")  // 是否在前端展示
+  category  String?  @db.VarChar(50)  // suggestion, complaint, praise, question
+  status    String   @default("unread") @db.VarChar(20)  // unread, read, processing, resolved
+  reply     String?  @db.Text  // 管理员回复内容
+  replyBy   String?  @db.VarChar(100)  // 回复人
+  replyAt   DateTime? @map("reply_at")  // 回复时间
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comments  FeedbackComment[]
+
+  @@index([isRead])
+  @@index([isPublic])
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
+  @@index([category])
+  @@map("feedbacks")
+}
+
+model FeedbackComment {
+  id        String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  feedbackId String  @map("feedback_id") @db.VarChar(36)
+  name      String   @db.VarChar(100)  // 评论者姓名（管理员回复时为管理员名）
+  contact   String?  @db.VarChar(200)  // 评论者联系方式（不公开）
+  content   String   @db.LongText  // 评论内容
+  isReply   Boolean  @default(false) @map("is_reply")  // 是否为管理员回复
+  isVisible Boolean  @default(true) @map("is_visible")  // 是否可见（隐藏/显示）
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  feedback  Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackId])
+  @@index([isReply])
+  @@index([isVisible])
+  @@index([createdAt(sort: Desc)])
+  @@map("feedback_comments")
+}
+
+model ImportLog {
+  id           String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  type         String   @db.VarChar(50)  // news, policy
+  fileName     String   @map("file_name") @db.VarChar(500)
+  totalCount   Int      @map("total_count")
+  successCount Int      @map("success_count")
+  failCount    Int      @map("fail_count")
+  status       String   @db.VarChar(20)  // success, partial, failed
+  errorLog     String?  @db.Text
+  importedBy   String   @map("imported_by") @db.VarChar(100)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("import_logs")
+}
+
+model Draft {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  type        String   @db.VarChar(20)
+  title       String   @db.VarChar(500)
+  category    String   @db.VarChar(100)
+  content     String   @db.LongText
+  imageUrl    String?  @map("image_url") @db.Text
+  fileUrl     String?  @map("file_url") @db.Text
+  source      String?  @db.VarChar(200)
+  publishDate String?  @map("publish_date") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@map("drafts")
+}
+
+model SearchLog {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  query       String   @db.VarChar(200)     // 搜索关键词
+  type        String?  @db.VarChar(50)      // 搜索类型: news, policy, service
+  resultCount Int      @default(0) @map("result_count")
+  ip          String?  @db.VarChar(50)      // 用户IP
+  userAgent   String?  @map("user_agent") @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([query])
+  @@index([type])
+  @@index([createdAt])
+  @@map("search_logs")
+}
+
+model ContentVersion {
+  id          String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  contentType String   @map("content_type") @db.VarChar(50)  // news, policy
+  contentId   String   @map("content_id") @db.VarChar(36)
+  version     Int
+  title       String   @db.VarChar(500)
+  content     String   @db.LongText
+  category    String?  @db.VarChar(100)
+  snapshot    String   @db.Text  // JSON格式的完整数据快照
+  changeLog   String?  @map("change_log") @db.Text
+  createdBy   String   @map("created_by") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([contentType, contentId, version])
+  @@index([contentType, contentId])
+  @@index([contentType])
+  @@index([createdAt])
+  @@map("content_versions")
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @map("_id") @db.VarChar(36)
+  title     String    @db.VarChar(500)
+  message   String    @db.Text
+  type      String    @db.VarChar(50)  // feedback, schedule, content_expired, system
+  link      String?   @db.VarChar(500)  // 点击跳转链接
+  isRead    Boolean   @default(false) @map("is_read")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([isRead])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// 登录日志模型
+model LoginLog {
+  id            String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  username      String   @db.VarChar(100)  // 登录用户名
+  adminId       String?  @map("admin_id") @db.VarChar(36)  // 登录成功时记录 admin ID
+  ipAddress     String   @map("ip_address") @db.VarChar(50)  // 客户端 IP
+  userAgent     String?  @map("user_agent") @db.VarChar(500)  // 完整 User-Agent
+  os            String?  @db.VarChar(100)  // 操作系统 (Windows, macOS, Linux, iOS, Android)
+  browser       String?  @db.VarChar(100)  // 浏览器 (Chrome, Firefox, Safari, Edge)
+  device        String?  @db.VarChar(50)  // 设备类型 (Desktop, Mobile, Tablet)
+  resolution    String?  @db.VarChar(20)  // 屏幕分辨率 (如 1920x1080)
+  loginType     String   @map("login_type") @db.VarChar(20)  // success, failed
+  failureReason String?  @map("failure_reason") @db.VarChar(200)  // 失败原因
+  loginAt       DateTime @default(now()) @map("login_at")  // 登录时间
+
+  @@index([username])
+  @@index([loginType])
+  @@index([loginAt(sort: Desc)])
+  @@index([ipAddress])
+  @@index([adminId])
+  @@map("login_logs")
+}
+
+// 操作日志模型
+model OperationLog {
+  id            String   @id @default(uuid()) @map("_id") @db.VarChar(36)
+  adminId       String   @map("admin_id") @db.VarChar(36)  // 操作人 ID
+  adminName     String   @map("admin_name") @db.VarChar(100)  // 操作人姓名
+  module        String   @db.VarChar(50)  // 业务模块 (news, policies, videos, services, workers, feedback, settings, media, links, carousel, about, site-info)
+  action        String   @db.VarChar(50)  // 操作行为 (create, update, delete, publish, unpublish, login, logout, batch_action, import, export)
+  targetId      String?  @map("target_id") @db.VarChar(36)  // 操作目标 ID
+  targetType    String?  @map("target_type") @db.VarChar(50)  // 操作目标类型
+  targetTitle   String?  @map("target_title") @db.VarChar(500)  // 操作目标标题/名称
+  details       String?  @db.Text  // 操作详情 (JSON 格式记录变更前后的数据)
+  ipAddress     String   @map("ip_address") @db.VarChar(50)  // 客户端 IP
+  userAgent     String?  @map("user_agent") @db.VarChar(500)  // 完整 User-Agent
+  os            String?  @db.VarChar(100)  // 操作系统
+  browser       String?  @db.VarChar(100)  // 浏览器
+  source        String   @default("admin_panel") @map("source") @db.VarChar(50)  // 日志来源 (admin_panel, api, batch, import)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([adminId])
+  @@index([module])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@index([adminName])
+  @@map("operation_logs")
+}
+
+enum ContentStatus {
+  pending
+  published
+}

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `carousel_items` ADD COLUMN `link_url` TEXT NULL;

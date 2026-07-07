@@ -1,0 +1,26 @@
+{
+  "name": "西安高新区总工会门户网站",
+  "short_name": "高新工会",
+  "description": "西安高新区总工会官方门户网站，提供新闻资讯、办事服务、政策文件等工会相关信息",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#b71c1c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["news", "government", "services"],
+  "lang": "zh-CN"
+}

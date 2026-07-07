@@ -1,0 +1,69 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function migrate() {
+  try {
+    console.log('开始添加服务图标和渐变色字段...');
+
+    // 1. 检查并添加新列（MySQL 5.7 不支持 IF NOT EXISTS）
+    const addColumns = [
+      "ALTER TABLE services ADD COLUMN icon VARCHAR(50) NULL",
+      "ALTER TABLE services ADD COLUMN gradient VARCHAR(50) NULL",
+      "ALTER TABLE services ADD COLUMN route_path VARCHAR(100) NULL"
+    ];
+
+    for (const sql of addColumns) {
+      try {
+        await prisma.$executeRawUnsafe(sql);
+        console.log(`✓ ${sql}`);
+      } catch (err) {
+        if (err.message.includes('Duplicate column')) {
+          console.log(`⚠ 列已存在，跳过: ${sql.split('ADD COLUMN ')[1].split(' ')[0]}`);
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    // 2. 为现有服务填充默认值（根据标题匹配）
+    const defaults = [
+      { title: '工会地图', icon: 'faMapMarkedAlt', gradient: 'from-blue-500 to-blue-600', routePath: '/services/map' },
+      { title: '入会申请', icon: 'faUserPlus', gradient: 'from-green-500 to-green-600', routePath: '/services/join' },
+      { title: '转会申请', icon: 'faExchangeAlt', gradient: 'from-indigo-500 to-indigo-600', routePath: '/services/transfer' },
+      { title: '职工诉求', icon: 'faCommentDots', gradient: 'from-orange-500 to-orange-600', routePath: '/services/appeal' },
+      { title: '求学圆梦', icon: 'faGraduationCap', gradient: 'from-purple-500 to-purple-600', routePath: '/services/education' },
+      { title: '女职工评优申报', icon: 'faFemale', gradient: 'from-pink-500 to-pink-600', routePath: '/services/female' },
+      { title: '困难职工申报', icon: 'faHandHoldingHeart', gradient: 'from-red-500 to-red-600', routePath: '/services/difficulty' },
+    ];
+
+    for (const def of defaults) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE services SET icon = ?, gradient = ?, route_path = ? WHERE title = ? AND icon IS NULL`,
+        def.icon, def.gradient, def.routePath, def.title
+      );
+      console.log(`✓ 已设置: ${def.title}`);
+    }
+
+    // 3. 为没有匹配到的服务设置默认值
+    await prisma.$executeRawUnsafe(
+      `UPDATE services SET icon = 'faTh', gradient = 'from-gray-500 to-gray-600' WHERE icon IS NULL`
+    );
+    console.log('✓ 其他服务已设置默认图标');
+
+    // 4. 验证
+    const services = await prisma.$queryRawUnsafe(
+      'SELECT title, icon, gradient, route_path FROM services WHERE isActive = 1 ORDER BY order_index'
+    );
+    console.log('\n当前服务配置:');
+    services.forEach(s => {
+      console.log(`  ${s.title}: icon=${s.icon}, gradient=${s.gradient}, route=${s.route_path}`);
+    });
+
+  } catch (error) {
+    console.error('迁移失败:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+migrate();

@@ -1,0 +1,413 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 使用开源免费字体，避免版权风险 */
+@layer base {
+  :root {
+    /* 正文：思源黑体 (Noto Sans SC) - SIL OFL 开源授权，免费可商用 */
+    --font-sans: "Noto Sans SC", "Source Han Sans SC", "WenQuanYi Micro Hei", system-ui, -apple-system, sans-serif;
+    /* 标题：思源宋体 (Noto Serif SC) - SIL OFL 开源授权，免费可商用 */
+    --font-serif: "Noto Serif SC", "Source Han Serif SC", serif;
+  }
+}
+
+@layer base {
+  :root {
+    /* 核心色板 - 深红权威色调 */
+    --primary: 0 72% 42%;
+    --primary-dark: 0 75% 32%;
+    --primary-light: 0 65% 55%;
+    --primary-foreground: 0 0% 98%;
+
+    /* 辅助色 - 金色点缀 */
+    --accent: 38 92% 50%;
+    --accent-light: 38 90% 60%;
+    --accent-foreground: 0 0% 20%;
+
+    /* 背景色 - 温暖灰调 */
+    --background: 40 20% 98%;
+    --background-elevated: 0 0% 100%;
+    --foreground: 0 0% 15%;
+    --foreground-muted: 0 0% 45%;
+
+    /* 卡片与表面 */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+    --card-border: 0 0% 92%;
+    --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+    /* 输入控件 */
+    --input: 0 0% 92%;
+    --ring: 0 72% 42%;
+
+    /* 语义色 */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* 圆角与间距 */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-[hsl(var(--card-border))];
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 标题字体 - 使用思源宋体增加权威感（开源免费可商用） */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif), serif;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  /* 图片最大尺寸限制 */
+  img {
+    max-width: 100%;
+  }
+
+  /* 限制 FontAwesome 图标大小，防止闪烁 */
+  svg[data-icon] {
+    width: 1em !important;
+    height: 1em !important;
+  }
+
+  /* 限制 top-bar 中的 FontAwesome 图标大小 */
+  .top-bar svg {
+    width: 1em;
+    height: 1em;
+    font-size: inherit;
+  }
+}
+
+@layer components {
+  /* 纹理背景 */
+  .bg-texture {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.4;
+  }
+
+  /* 渐变背景 */
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary-dark)) 0%, hsl(var(--primary)) 50%, hsl(var(--primary-light)) 100%);
+  }
+
+  .gradient-warm {
+    background: linear-gradient(135deg, hsl(var(--accent-light)) 0%, hsl(var(--accent)) 100%);
+  }
+
+  /* 按钮样式 */
+  .btn-primary {
+    @apply bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold px-6 py-3 rounded-lg;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-[hsl(var(--primary-dark))] hover:shadow-lg hover:-translate-y-0.5;
+    @apply active:translate-y-0 active:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-[hsl(var(--foreground))] font-semibold px-6 py-3 rounded-lg border border-[hsl(var(--card-border))];
+    @apply transition-all duration-300 ease-out;
+    @apply hover:border-[hsl(var(--primary))] hover:text-[hsl(var(--primary))];
+  }
+
+  /* 卡片样式 */
+  .card {
+    @apply bg-[hsl(var(--card))] rounded-xl shadow-[var(--shadow-md)] border border-[hsl(var(--card-border))];
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card-hover {
+    @apply hover:shadow-[var(--shadow-lg)] hover:-translate-y-1;
+  }
+
+  /* 文本样式 */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
+  }
+
+  /* 装饰性边框 */
+  .border-accent {
+    @apply border-l-4 border-[hsl(var(--primary))];
+  }
+
+  /* 动画类 */
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* 加载动画 */
+  .skeleton {
+    @apply animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200;
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* 标签样式 */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))];
+  }
+
+  .badge-accent {
+    @apply bg-[hsl(var(--accent))] text-white;
+  }
+
+  /* ========== V2 特有样式 ========== */
+
+  /* 主容器 */
+  .wrapper {
+    @apply max-w-[1400px] mx-auto bg-white;
+    @apply text-base;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  }
+
+  /* 圆角胶囊按钮 */
+  .btn-pill {
+    @apply rounded-full px-6 py-2;
+  }
+
+  /* 红色底部边框标题 */
+  .title-bordered {
+    @apply pb-3 mb-4;
+    @apply border-b-2 border-[#d32f2f];
+  }
+
+  /* 卡片基础样式 */
+  .card-base {
+    @apply bg-white rounded-2xl border border-[#eef2f6];
+    @apply shadow-sm;
+  }
+
+  /* 新闻列表项 */
+  .news-item {
+    @apply flex items-center py-2.5;
+    @apply border-b border-[#f0f0f0];
+    @apply last:border-0;
+  }
+
+  .news-item::before {
+    content: '';
+    @apply w-1.5 h-1.5 rounded-full bg-[#b71c1c] mr-3 flex-shrink-0;
+  }
+
+  /* 图标卡片网格 */
+  .icon-card {
+    @apply bg-[#fafbfc] rounded-2xl p-4 text-center;
+    @apply border border-[#eaeff4];
+    @apply hover:shadow-md hover:-translate-y-0.5;
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  /* V2 徽章 */
+  .badge-red {
+    @apply bg-[#c62828] text-white px-4 py-1.5 rounded-full text-sm font-bold;
+  }
+
+  .badge-blue {
+    @apply bg-[#1e3a6f] text-white px-4 py-1.5 rounded-full text-sm font-bold;
+  }
+
+  .badge-gold {
+    @apply bg-[#ffd966] text-[#a51b1b] px-4 py-1.5 rounded-full text-sm font-bold;
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+/* 富文本内容样式 - 用于工会概况等页面渲染编辑器内容 */
+.rich-text-content strong,
+.rich-text-content b {
+  font-weight: 700 !important;
+}
+
+.rich-text-content em,
+.rich-text-content i {
+  font-style: italic !important;
+}
+
+.rich-text-content u {
+  text-decoration: underline !important;
+}
+
+.rich-text-content h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.rich-text-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+}
+
+.rich-text-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.rich-text-content p {
+  margin: 0.75rem 0;
+  line-height: 1.75;
+}
+
+/* 空段落隐藏，避免编辑器中多余的回车产生空行 */
+.rich-text-content p:empty {
+  display: none;
+}
+
+.rich-text-content ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.rich-text-content ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.rich-text-content li {
+  margin: 0.25rem 0;
+}
+
+.rich-text-content blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  font-style: italic;
+  margin: 0.75rem 0;
+}
+
+.rich-text-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* 富文本容器 - normal 让 <p> 等块级元素正常布局 */
+.rich-text-content {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 富文本段落不需要 pre-wrap，继承容器的 normal */
+.rich-text-content p,
+.rich-text-content div {
+  word-break: break-word;
+}
+
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem auto;
+  max-height: 500px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  display: block;
+}
+
+/* 图片居中样式 */
+.rich-text-content img[align="center"],
+.rich-text-content img.align-center,
+.rich-text-content p[style*="text-align: center"] img {
+  margin-left: auto;
+  margin-right: auto;
+}
