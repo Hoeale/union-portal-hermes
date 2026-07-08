@@ -147,7 +147,7 @@ function WorkersContent() {
 
             {/* 卡片内容 */}
             <div className="p-6">
-              <p className="text-gray-700 text-sm mb-4 line-clamp-3">
+              <p className="text-gray-700 text-sm mb-4 line-clamp-3 whitespace-pre-wrap">
                 {stripHtml(worker.story)}
               </p>
 

@@ -1052,7 +1052,8 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
           >
             <FaCode />
           </button>
-          <div className="relative">
+          {/* 插入表格功能已隐藏 */}
+          {/* <div className="relative">
             <button
               onClick={() => setShowTableGrid(!showTableGrid)}
               className={`p-2 rounded hover:bg-gray-200 ${
@@ -1102,7 +1103,7 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
                 </p>
               </div>
             )}
-          </div>
+          </div> */}
           {showTemplates && (
             <button
               onClick={() => setShowTemplatePicker(true)}

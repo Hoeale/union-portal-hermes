@@ -113,7 +113,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">仪表板</h2>
+        <h2 className="text-2xl font-bold text-gray-900">仪表盘</h2>
         <p className="text-gray-600 mt-1">欢迎来到工会门户管理系统</p>
       </div>
 
