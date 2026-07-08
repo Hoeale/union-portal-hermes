@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faComments, faTimes, faSpinner, faChevronLeft, faChevronRight,
-  faLightbulb, faExclamationTriangle, faThumbsUp, faQuestionCircle,
   faUser, faReply, faCheckCircle
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -12,7 +11,6 @@ interface PublicFeedback {
   id: string;
   name: string;
   content: string;
-  category?: string | null;
   reply?: string | null;
   replyBy?: string | null;
   replyAt?: string | null;
@@ -27,13 +25,6 @@ interface PublicComment {
   isReply: boolean;
   createdAt: string;
 }
-
-const CATEGORY_MAP: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  suggestion: { label: '建议', icon: faLightbulb, color: 'text-blue-700', bgColor: 'bg-blue-100' },
-  complaint: { label: '投诉', icon: faExclamationTriangle, color: 'text-red-700', bgColor: 'bg-red-100' },
-  praise: { label: '表扬', icon: faThumbsUp, color: 'text-green-700', bgColor: 'bg-green-100' },
-  question: { label: '咨询', icon: faQuestionCircle, color: 'text-purple-700', bgColor: 'bg-purple-100' },
-};
 
 interface FeedbackBoardProps {
   onClose: () => void;
@@ -119,8 +110,6 @@ export default function FeedbackBoard({ onClose }: FeedbackBoardProps) {
             ) : (
               <div className="divide-y divide-gray-50">
                 {feedbacks.map((fb) => {
-                  const categoryInfo = fb.category ? CATEGORY_MAP[fb.category] : null;
-                  
                   return (
                     <div key={fb.id} className="p-6 hover:bg-gray-50/50 transition-colors">
                       {/* 留言头部 */}
@@ -132,12 +121,6 @@ export default function FeedbackBoard({ onClose }: FeedbackBoardProps) {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-semibold text-gray-900">{fb.name}</span>
-                              {categoryInfo && (
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ${categoryInfo.bgColor} ${categoryInfo.color}`}>
-                                  <FontAwesomeIcon icon={categoryInfo.icon} className="text-xs" />
-                                  {categoryInfo.label}
-                                </span>
-                              )}
                             </div>
                             <p className="text-xs text-gray-500">{formatDate(fb.createdAt)}</p>
                           </div>

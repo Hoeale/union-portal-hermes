@@ -12,7 +12,6 @@ interface PublicFeedback {
   id: string;
   name: string;
   content: string;
-  category: string | null;
   status: string;
   reply: string | null;
   replyAt: string | null;
@@ -128,16 +127,6 @@ export default function FeedbackPage() {
       question: '咨询',
     };
     return category ? labels[category] || '其他' : '其他';
-  };
-
-  const getCategoryColor = (category: string | null) => {
-    const colors: Record<string, string> = {
-      suggestion: 'bg-blue-100 text-blue-700',
-      complaint: 'bg-red-100 text-red-700',
-      praise: 'bg-green-100 text-green-700',
-      question: 'bg-purple-100 text-purple-700',
-    };
-    return category ? colors[category] || 'bg-gray-100 text-gray-700' : 'bg-gray-100 text-gray-700';
   };
 
   return (
@@ -296,9 +285,6 @@ export default function FeedbackPage() {
                         <div className="flex items-center gap-2">
                           <FontAwesomeIcon icon={faUser} className="text-gray-400" />
                           <span className="font-medium text-gray-900">{feedback.name}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs ${getCategoryColor(feedback.category)}`}>
-                            {getCategoryLabel(feedback.category)}
-                          </span>
                         </div>
                         <div className="flex items-center gap-1 text-sm text-gray-500">
                           <FontAwesomeIcon icon={faCalendar} className="text-gray-400" />

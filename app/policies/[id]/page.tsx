@@ -53,11 +53,10 @@ export default async function PolicyDetailPage({
   }
 
   // 判断是否显示下载按钮
-  // 优先检查单个政策的设置，全局配置作为额外开关
+  // 只要单个政策启用了下载且有附件，就显示下载区域
   const showDownload =
     policy.enableDownload &&
-    (policy.fileUrl || policy.fileUrls) &&
-    (config.policy_download_enabled === 'true' || config.policy_download_enabled === undefined);
+    (policy.fileUrl || policy.fileUrls);
 
   // 解析多附件数据
   const attachments: Attachment[] = [];

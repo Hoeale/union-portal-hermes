@@ -682,18 +682,17 @@ export default function AdminFooterPage() {
           <form onSubmit={(e) => { e.preventDefault(); handleSaveSiteInfo(); }} className="space-y-6">
             <div>
               <label htmlFor="address" className="block text-sm font-semibold text-gray-700 mb-2">
-                通讯地址 <span className="text-red-500">*</span>
+                通讯地址
               </label>
               <input
                 id="address"
                 type="text"
                 value={siteInfo.address}
                 onChange={(e) => setSiteInfo({ ...siteInfo, address: e.target.value })}
-                required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent transition-all"
-                placeholder="请输入通讯地址"
+                placeholder="请输入通讯地址（留空则不显示）"
               />
-              <p className="mt-2 text-sm text-gray-500">全站底部显示的通讯地址</p>
+              <p className="mt-2 text-sm text-gray-500">全站底部显示的通讯地址，留空则不显示</p>
             </div>
 
             <div>

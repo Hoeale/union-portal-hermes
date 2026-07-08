@@ -903,50 +903,7 @@ export default function AdminServicesPage() {
                   />
                 </div>
 
-                {/* 显示配置字段 */}
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      图标名称
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.icon}
-                      onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                      placeholder="例如: faUserPlus"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">FontAwesome 图标类名</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      渐变色
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.gradient}
-                      onChange={(e) => setFormData({ ...formData, gradient: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                      placeholder="例如: from-blue-500 to-blue-600"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">Tailwind 渐变类</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      路由路径
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.routePath}
-                      onChange={(e) => setFormData({ ...formData, routePath: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                      placeholder="例如: /services/join"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">服务详情页路径</p>
-                  </div>
-                </div>
+                {/* 显示配置字段 - 已隐藏（图标名称、渐变色、路由路径） */}
               </div>
 
               {/* 服务介绍 */}

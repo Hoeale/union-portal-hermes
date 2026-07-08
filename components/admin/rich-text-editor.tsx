@@ -19,7 +19,7 @@ import JSZip from 'jszip';
 import EditorTemplatePicker from './editor-template-picker';
 
 // 可拖拽缩放的图片 NodeView
-function ResizableImageNodeView({ node, updateAttributes, selected }: NodeViewProps) {
+function ResizableImageNodeView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const isResizingRef = useRef(false);
   const startXRef = useRef(0);
@@ -31,7 +31,6 @@ function ResizableImageNodeView({ node, updateAttributes, selected }: NodeViewPr
     isResizingRef.current = true;
     startXRef.current = e.clientX;
     const currentWidth = parseFloat((node.attrs.width as string) || '100') || 100;
-    // 将百分比转换为像素用于拖拽计算
     const editorEl = document.querySelector('.ProseMirror') as HTMLElement;
     const editorWidth = editorEl ? editorEl.offsetWidth - 32 : 800;
     startWidthRef.current = (currentWidth / 100) * editorWidth;
@@ -58,32 +57,98 @@ function ResizableImageNodeView({ node, updateAttributes, selected }: NodeViewPr
     document.body.style.cursor = 'col-resize';
   }, [node.attrs.width, updateAttributes]);
 
+  // 点击图片时通知父组件显示工具栏
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const pos = getPos?.();
+    if (typeof pos === 'number') {
+      // 选中图片节点
+      editor?.chain().focus().setNodeSelection(pos).run();
+      // 通知父组件显示工具栏
+      window.dispatchEvent(new CustomEvent('tiptap-image-click', { 
+        detail: { pos, imgElement: imgRef.current } 
+      }));
+    }
+  }, [editor, getPos]);
+
   const width = node.attrs.width || '100%';
+  const align = (node.attrs.align as string) || 'center';
+  const justifyContent = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center';
+
+  // 在图片上方/下方插入空段落，让用户可以在图片前后编辑
+  const insertParagraphAt = (direction: 'before' | 'after') => {
+    if (!editor) return;
+    const rawPos = getPos?.();
+    if (typeof rawPos !== 'number') return;
+    const pos: number = rawPos;
+    if (direction === 'before') {
+      editor.chain()
+        .insertContentAt(pos, { type: 'paragraph' })
+        .focus(pos + 1)
+        .run();
+    } else {
+      const insertPos = pos + node.nodeSize;
+      editor.chain()
+        .insertContentAt(insertPos, { type: 'paragraph' })
+        .focus(insertPos + 1)
+        .run();
+    }
+  };
 
   return (
     <NodeViewWrapper
-      className="relative inline-block"
+      className="relative"
       data-drag-handle
-      style={{ width: width === '100%' ? '100%' : width, maxWidth: '100%' }}
+      data-align={align}
+      style={{ margin: '0.5em 0' }}
     >
-      <img
-        ref={imgRef}
-        src={node.attrs.src}
-        alt={node.attrs.alt || ''}
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-        className={selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
-      />
-      {/* 拖拽缩放手柄 - 始终固定在图片右下角 */}
+      {/* 上方可点击区域 - 用于在图片前插入光标 */}
       <div
-        onMouseDown={handleMouseDown}
-        className="absolute right-0 bottom-0 w-4 h-4 bg-blue-500 border-2 border-white rounded-sm cursor-nwse-resize z-10 hover:bg-blue-600 transition-colors shadow-md"
-        title="拖拽调整大小"
+        className="absolute -top-2 left-0 right-0 h-4 cursor-text z-20"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          insertParagraphAt('before');
+        }}
+        title="点击在图片上方插入文本"
+      />
+      {/* 图片容器 */}
+      <div style={{ display: 'flex', justifyContent, width: '100%' }}>
+        <div 
+          style={{ width: width === '100%' ? '100%' : width, maxWidth: '100%', position: 'relative', display: 'inline-block' }}
+          className={selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+        >
+          <img
+            ref={imgRef}
+            src={node.attrs.src}
+            alt={node.attrs.alt || ''}
+            style={{ width: '100%', height: 'auto', display: 'block', cursor: 'pointer' }}
+            onClick={handleImageClick}
+          />
+          {/* 拖拽缩放手柄 */}
+          <div
+            onMouseDown={handleMouseDown}
+            className="absolute right-0 bottom-0 w-4 h-4 bg-blue-500 border-2 border-white rounded-sm cursor-nwse-resize z-10 hover:bg-blue-600 transition-colors shadow-md"
+            title="拖拽调整大小"
+          />
+        </div>
+      </div>
+      {/* 下方可点击区域 - 用于在图片后插入光标 */}
+      <div
+        className="absolute -bottom-2 left-0 right-0 h-4 cursor-text z-20"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          insertParagraphAt('after');
+        }}
+        title="点击在图片下方插入文本"
       />
     </NodeViewWrapper>
   );
 }
 
-// 扩展 Image 扩展以支持宽度属性和 NodeView
+// 扩展 Image 扩展以支持宽度和对齐属性
 const CustomImage = Image.extend({
   addNodeView() {
     return ReactNodeViewRenderer(ResizableImageNodeView);
@@ -111,6 +176,16 @@ const CustomImage = Image.extend({
         renderHTML: (attributes) => {
           if (!attributes.height) return {};
           return { height: attributes.height, style: `height: ${attributes.height}` };
+        },
+      },
+      align: {
+        default: 'center',
+        parseHTML: (element) => {
+          return element.getAttribute('align') || element.getAttribute('data-align') || 'center';
+        },
+        renderHTML: (attributes) => {
+          if (!attributes.align || attributes.align === 'center') return {};
+          return { align: attributes.align, 'data-align': attributes.align };
         },
       },
     };
@@ -154,6 +229,7 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
   // 图片编辑相关
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
   const selectedImageRef = useRef<HTMLImageElement | null>(null);
+  const [selectedImagePos, setSelectedImagePos] = useState<number | null>(null);
   const [showImageToolbar, setShowImageToolbar] = useState(false);
   const [imageToolbarPos, setImageToolbarPos] = useState({ top: 0, left: 0 });
   const [imageSizeInput, setImageSizeInput] = useState('');
@@ -202,27 +278,13 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
       handleDOMEvents: {
         click: (view, event) => {
           const target = event.target as HTMLElement;
-          if (target.tagName === 'IMG') {
-            const img = target as HTMLImageElement;
-            selectedImageRef.current = img;
-            setSelectedImage(img);
-            setShowImageToolbar(true);
-            // 计算工具栏位置
-            const rect = img.getBoundingClientRect();
-            const editorRect = view.dom.getBoundingClientRect();
-            setImageToolbarPos({
-              top: rect.top - editorRect.top - 45,
-              left: rect.left - editorRect.left + rect.width / 2 - 120,
-            });
+          // 如果点击图片，由 NodeView 内部处理，不执行编辑器默认行为
+          if (target.tagName === 'IMG' || target.closest('[data-node-view-wrapper]')) {
             return true;
-          } else {
-            // 点击非图片区域，取消选中
-            if (selectedImageRef.current) {
-              selectedImageRef.current = null;
-              setSelectedImage(null);
-              setShowImageToolbar(false);
-            }
           }
+          // 点击编辑器其他区域时，隐藏图片工具栏
+          setShowImageToolbar(false);
+          setSelectedImagePos(null);
           return false;
         },
       },
@@ -265,6 +327,52 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
       },
     },
   });
+
+  // 监听 NodeView 中的图片选中事件
+  useEffect(() => {
+    const handleImageClick = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { pos, imgElement } = customEvent.detail;
+      setSelectedImagePos(pos);
+      setShowImageToolbar(true);
+      
+      // 计算工具栏位置
+      setTimeout(() => {
+        if (imgElement) {
+          const rect = imgElement.getBoundingClientRect();
+          const editorElement = document.querySelector('.ProseMirror');
+          const editorRect = editorElement?.getBoundingClientRect();
+          
+          if (editorRect) {
+            setImageToolbarPos({
+              top: rect.top - editorRect.top - 50,
+              left: rect.left - editorRect.left + rect.width / 2 - 150,
+            });
+          }
+        }
+      }, 50);
+    };
+
+    window.addEventListener('tiptap-image-click', handleImageClick);
+    return () => window.removeEventListener('tiptap-image-click', handleImageClick);
+  }, []);
+
+  // 点击图片外部时隐藏工具栏
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const isImageClick = target.closest('[data-node-view-wrapper]');
+      const isToolbarClick = target.closest('[data-image-toolbar]');
+      
+      if (!isImageClick && !isToolbarClick) {
+        setShowImageToolbar(false);
+        setSelectedImagePos(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleImageUpload = async () => {
     if (!onImageUpload) return;
@@ -1176,34 +1284,97 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
       )}
 
         {/* 图片编辑工具栏 */}
-        {showImageToolbar && selectedImage && (
+        {showImageToolbar && selectedImagePos !== null && (
           <div
             className="absolute z-40 bg-white border border-gray-300 rounded-lg shadow-lg px-2 py-1.5 flex items-center gap-1"
             style={{ top: `${imageToolbarPos.top}px`, left: `${Math.max(0, imageToolbarPos.left)}px` }}
+            onMouseDown={(e) => {
+              e.stopPropagation(); // 阻止事件冒泡到编辑器
+            }}
+            onClick={(e) => {
+              e.stopPropagation(); // 阻止事件冒泡到编辑器
+            }}
+            data-image-toolbar
           >
             <button
-              onClick={() => handleImageResize(25)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  const newWidth = `25%`;
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, width: newWidth });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
+              }}
               className="px-2 py-1 text-xs rounded hover:bg-gray-100 text-gray-700"
               title="设置为25%宽度"
             >
               25%
             </button>
             <button
-              onClick={() => handleImageResize(50)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  const newWidth = `50%`;
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, width: newWidth });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
+              }}
               className="px-2 py-1 text-xs rounded hover:bg-gray-100 text-gray-700"
               title="设置为50%宽度"
             >
               50%
             </button>
             <button
-              onClick={() => handleImageResize(75)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  const newWidth = `75%`;
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, width: newWidth });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
+              }}
               className="px-2 py-1 text-xs rounded hover:bg-gray-100 text-gray-700"
               title="设置为75%宽度"
             >
               75%
             </button>
             <button
-              onClick={() => handleImageResize(100)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  const newWidth = `100%`;
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, width: newWidth });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
+              }}
               className="px-2 py-1 text-xs rounded hover:bg-gray-100 text-gray-700"
               title="设置为100%宽度"
             >
@@ -1211,31 +1382,78 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
             </button>
             <div className="w-px h-5 bg-gray-300 mx-0.5" />
             <button
-              onClick={() => setShowImageSizeDialog(true)}
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, align: 'left' });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
+              }}
               className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-              title="自定义尺寸"
+              title="图片左对齐"
             >
-              <FaCropAlt className="text-sm" />
+              <FaAlignLeft className="text-sm" />
             </button>
             <button
               onClick={() => {
-                if (!selectedImage || !editor) return;
-                const src = selectedImage.src;
-                editor.chain().focus()
-                  .command(({ tr, dispatch }) => {
-                    const { doc } = tr;
-                    doc.descendants((node, pos) => {
-                      if (node.type.name === 'image' && node.attrs.src === src) {
-                        const currentWidth = parseInt(node.attrs.width || '100') || 100;
-                        const newWidth = `${Math.min(currentWidth + 10, 200)}%`;
-                        tr.setNodeMarkup(pos, undefined, { ...node.attrs, width: newWidth });
-                        return false;
-                      }
-                    });
-                    if (dispatch) dispatch(tr);
-                    return true;
-                  })
-                  .run();
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, align: 'center' });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
+              }}
+              className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+              title="图片居中对齐"
+            >
+              <FaAlignCenter className="text-sm" />
+            </button>
+            <button
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, align: 'right' });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
+              }}
+              className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+              title="图片右对齐"
+            >
+              <FaAlignRight className="text-sm" />
+            </button>
+            <div className="w-px h-5 bg-gray-300 mx-0.5" />
+            <button
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  const currentWidth = parseInt(node.attrs.width || '100') || 100;
+                  const newWidth = `${Math.min(currentWidth + 10, 200)}%`;
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, width: newWidth });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
               }}
               className="p-1.5 rounded hover:bg-gray-100 text-blue-600"
               title="放大10%"
@@ -1244,23 +1462,19 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
             </button>
             <button
               onClick={() => {
-                if (!selectedImage || !editor) return;
-                const src = selectedImage.src;
-                editor.chain().focus()
-                  .command(({ tr, dispatch }) => {
-                    const { doc } = tr;
-                    doc.descendants((node, pos) => {
-                      if (node.type.name === 'image' && node.attrs.src === src) {
-                        const currentWidth = parseInt(node.attrs.width || '100') || 100;
-                        const newWidth = `${Math.max(currentWidth - 10, 10)}%`;
-                        tr.setNodeMarkup(pos, undefined, { ...node.attrs, width: newWidth });
-                        return false;
-                      }
-                    });
-                    if (dispatch) dispatch(tr);
-                    return true;
-                  })
-                  .run();
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  const currentWidth = parseInt(node.attrs.width || '100') || 100;
+                  const newWidth = `${Math.max(currentWidth - 10, 10)}%`;
+                  editor.chain().focus()
+                    .command(({ tr, dispatch }) => {
+                      tr.setNodeMarkup(selectedImagePos, undefined, { ...node.attrs, width: newWidth });
+                      if (dispatch) dispatch(tr);
+                      return true;
+                    })
+                    .run();
+                }
               }}
               className="p-1.5 rounded hover:bg-gray-100 text-blue-600"
               title="缩小10%"
@@ -1269,7 +1483,17 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
             </button>
             <div className="w-px h-5 bg-gray-300 mx-0.5" />
             <button
-              onClick={handleDeleteImage}
+              onClick={() => {
+                if (!editor || selectedImagePos === null) return;
+                const node = editor.state.doc.nodeAt(selectedImagePos);
+                if (node && node.type.name === 'image') {
+                  editor.chain().focus()
+                    .deleteRange({ from: selectedImagePos, to: selectedImagePos + node.nodeSize })
+                    .run();
+                  setShowImageToolbar(false);
+                  setSelectedImagePos(null);
+                }
+              }}
               className="p-1.5 rounded hover:bg-red-100 text-red-500"
               title="删除图片"
             >

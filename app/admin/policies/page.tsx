@@ -515,6 +515,7 @@ function AdminPoliciesPageContent() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">分类</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">显示</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">下载</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
                 </tr>
               </thead>
@@ -544,6 +545,15 @@ function AdminPoliciesPageContent() {
                         className="text-gray-400 hover:text-gray-600"
                       >
                         <FontAwesomeIcon icon={policy.isActive ? faToggleOn : faToggleOff} className="text-xl" />
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => toggleDownload(policy.id, !policy.enableDownload)}
+                        className="text-gray-400 hover:text-gray-600"
+                        title={policy.enableDownload ? '禁用附件下载' : '启用附件下载'}
+                      >
+                        <FontAwesomeIcon icon={policy.enableDownload ? faDownload : faXmark} className="text-lg" />
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">

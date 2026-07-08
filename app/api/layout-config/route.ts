@@ -71,7 +71,7 @@ const DEFAULT_HOME_SECTIONS = [
   { id: 'header', name: '顶部导航栏', description: '包含Logo、导航菜单等', visible: true, order: 0, config: {} },
   { id: 'hero-carousel', name: '头条轮播区', description: '首页顶部图片轮播区域', visible: true, order: 1, config: { limit: 5, sideLimit: 5, autoRotate: true, interval: 5000 } },
   { id: 'news-sections', name: '新闻动态区', description: '工会新闻、时政新闻等', visible: false, order: 2, config: { layout: 'horizontal', sections: [{ title: '新闻动态', category: '动态', limit: 5, icon: 'rss' }, { title: '区总动态', category: '动态', limit: 5, icon: 'users' }] } },
-  { id: 'notice-panel', name: '通知要闻+服务面板', description: '通知要闻、工会动态', visible: true, order: 3, config: { title: '通知要闻', limit: 6, showServicePanel: true } },
+  { id: 'notice-panel', name: '通知要闻+服务面板', description: '通知要闻、工会动态', visible: true, order: 3, config: { title: '通知要闻/公示公告', limit: 6, showServicePanel: true } },
   { id: 'service-grid', name: '办事服务区', description: '工会服务入口网格', visible: true, order: 4, config: { title: '办事服务', iconCount: 8, buttonCount: 2 } },
 ];
 

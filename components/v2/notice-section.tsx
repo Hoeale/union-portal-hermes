@@ -15,9 +15,10 @@ interface NoticeSectionProps {
   category?: string;    // 新闻分类，默认 "公告"
   limit?: number;       // 显示数量，默认 3
   notices?: News[];     // SSR 模式传入的数据
+  moreLink?: string;    // "更多"链接，默认 "/news"
 }
 
-export default function NoticeSection({ title = '通知公告', limit = 6, notices: propNotices }: NoticeSectionProps) {
+export default function NoticeSection({ title = '通知公告', limit = 6, notices: propNotices, moreLink = '/news' }: NoticeSectionProps) {
   // 如果传入了 props 数据（SSR 模式），直接使用
   const shouldFetch = !propNotices || propNotices.length === 0;
   
@@ -40,7 +41,7 @@ export default function NoticeSection({ title = '通知公告', limit = 6, notic
           <Megaphone className="inline text-[#b71c1c] mr-2 w-6 h-6" />
           {title}
         </h3>
-        <Link href="/news" className="text-sm text-[#b71c1c] hover:text-[#8b0000]" prefetch={true}>
+        <Link href={moreLink} className="text-sm text-[#b71c1c] hover:text-[#8b0000]" prefetch={true}>
           更多 →
         </Link>
       </div>

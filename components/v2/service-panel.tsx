@@ -68,6 +68,7 @@ export default function ServicePanel() {
                   width={140}
                   height={140}
                   className="object-contain w-full h-full"
+                  priority
                 />
               ) : (
                 <QrCode className="w-12 h-12 text-gray-300" />
@@ -94,6 +95,7 @@ export default function ServicePanel() {
                   width={140}
                   height={140}
                   className="object-contain w-full h-full"
+                  priority
                 />
               ) : (
                 <QrCode className="w-12 h-12 text-gray-300" />

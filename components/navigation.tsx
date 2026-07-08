@@ -7,9 +7,11 @@ import { usePathname } from 'next/navigation';
 import { Search, Menu, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import HeaderBanner from '@/components/header-banner';
+import { useLayoutConfig } from '@/components/v2/layout-config-context';
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { config } = useLayoutConfig();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [navItems, setNavItems] = useState<Array<{ name: string; href: string }>>([]);
@@ -81,23 +83,23 @@ export default function Navigation() {
           <div className="flex items-center justify-between h-20">
             {/* Logo and Title */}
             <Link href="/" className="flex items-center space-x-4 group">
-              <div className="relative">
-                <div className="w-14 h-14 gradient-primary rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 overflow-hidden bg-white">
-                  <Image
-                    src="/logo.png"
-                    alt="西安高新区总工会"
-                    width={56}
-                    height={56}
-                    className="object-contain p-1"
-                  />
-                </div>
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl lg:text-2xl font-bold text-[hsl(var(--foreground))]">
-                  西安高新区总工会
-                </h1>
-              </div>
-            </Link>
+                            <div className="relative">
+                              <div className="w-14 h-14 gradient-primary rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 overflow-hidden bg-white">
+                                <Image
+                                  src="/logo.png"
+                                  alt="西安高新区总工会"
+                                  width={56}
+                                  height={56}
+                                  className="object-contain p-1"
+                                />
+                              </div>
+                            </div>
+                            <div className="hidden sm:block">
+                              <h1 className="text-xl lg:text-2xl font-bold text-[hsl(var(--foreground))]">
+                                西安高新区总工会
+                              </h1>
+                            </div>
+                          </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center">

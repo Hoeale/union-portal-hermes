@@ -346,11 +346,25 @@
 .rich-text-content p {
   margin: 0.75rem 0;
   line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-/* 空段落隐藏，避免编辑器中多余的回车产生空行 */
+/* ⚠️ 重要：空段落保留为段落间隔，不要改为 display: none
+ * 
+ * TipTap 富文本编辑器输出的空 <p></p> 标签需要保留为视觉间隔。
+ * 如果改为 display: none，会导致：
+ * - 段落之间失去视觉间隔，内容挤在一起
+ * - 后台编辑时按回车产生的换行效果在前端消失
+ * - 影响 9 个业务模块的可读性（工会概况、新闻详情、政策文件、职工服务等）
+ * 
+ * 影响模块：about, news/[id], policies/[id], workers, view/[date]/[id],
+ *          preview/editor, preview/news/[id], preview/policy/[id], preview/draft/[id]
+ */
 .rich-text-content p:empty {
-  display: none;
+  display: block;
+  height: 1.75rem;
+  margin: 0.75rem 0;
 }
 
 .rich-text-content ul {
@@ -404,8 +418,21 @@
   display: block;
 }
 
-/* 图片居中样式 */
+/* 图片对齐样式 - 支持 align 和 data-align 属性 */
+.rich-text-content img[align="left"],
+.rich-text-content img[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.rich-text-content img[align="right"],
+.rich-text-content img[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
 .rich-text-content img[align="center"],
+.rich-text-content img[data-align="center"],
 .rich-text-content img.align-center,
 .rich-text-content p[style*="text-align: center"] img {
   margin-left: auto;

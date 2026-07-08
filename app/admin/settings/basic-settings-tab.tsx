@@ -126,7 +126,7 @@ export default function BasicSettingsTab() {
         </form>
       </div>
 
-      {/* 审核功能设置卡片 */}
+      {/* 审核功能设置卡片 - 已隐藏
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -159,6 +159,7 @@ export default function BasicSettingsTab() {
           </div>
         </div>
       </div>
+      */}
     </>
   );
 }

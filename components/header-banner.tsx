@@ -1,14 +1,18 @@
 'use client';
 
 import Image from 'next/image';
+import { useLayoutConfig } from '@/components/v2/layout-config-context';
 
 export default function HeaderBanner() {
+  const { config } = useLayoutConfig();
+  const siteTitle = config?.v2_header?.title || '西安高新区总工会';
+
   return (
     <div className="relative w-full h-[180px] lg:h-[220px] overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/header-bg.png"
+          src={config?.v2_header?.background_image || '/header-bg.png'}
           alt=""
           fill
           className="object-cover object-center"
@@ -22,7 +26,7 @@ export default function HeaderBanner() {
       <div className="relative z-10 container mx-auto px-4 lg:px-8 h-full flex items-center">
         <div className="text-white">
           <h1 className="text-4xl lg:text-5xl font-bold tracking-wide">
-            西安高新区总工会
+            {siteTitle}
           </h1>
         </div>
       </div>
