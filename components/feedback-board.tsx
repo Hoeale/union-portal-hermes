@@ -82,7 +82,7 @@ export default function FeedbackBoard({ onClose }: FeedbackBoardProps) {
                 <FontAwesomeIcon icon={faComments} className="text-white text-lg" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">留言板</h3>
+                <h3 className="text-lg font-bold text-gray-900">留言建议</h3>
                 <p className="text-xs text-gray-500">共 {total} 条公开留言</p>
               </div>
             </div>

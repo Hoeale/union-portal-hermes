@@ -101,7 +101,7 @@ export default function AdminLayout({
   };
 
   const navigation = [
-    { name: '仪表板', href: '/admin', icon: faChartBar },
+    { name: '仪表盘', href: '/admin', icon: faChartBar },
     { name: '工会概况', href: '/admin/about', icon: faInfoCircle },
     { name: '新闻管理', href: '/admin/news', icon: faNewspaper },
     { name: '办事服务', href: '/admin/services', icon: faTasks },

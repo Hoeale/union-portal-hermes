@@ -55,7 +55,7 @@ async function getHomeSections(): Promise<HomeSection[]> {
   return [
     { id: 'header', name: '顶部导航栏', description: '', visible: true, order: 0 },
     { id: 'hero-carousel', name: '头条轮播区', description: '', visible: true, order: 1, config: { limit: 5, sideLimit: 5, autoRotate: true, interval: 5000 } },
-    { id: 'notice-panel', name: '通知要闻+服务面板', description: '', visible: true, order: 2, config: { title: '通知要闻/公示公告', limit: 6, showServicePanel: true } },
+    { id: 'notice-panel', name: '通知要闻+服务面板', description: '', visible: true, order: 2, config: { title: '公示公告/通知要闻', limit: 6, showServicePanel: true } },
     { id: 'service-grid', name: '办事服务区', description: '', visible: true, order: 3 },
   ];
 }
@@ -161,7 +161,7 @@ export default async function HomePage() {
           <div key={section.id} className="flex gap-6 mb-10">
             <NoticeSection
               notices={noticeNews}
-              title={config.title || '通知要闻/公示公告'}
+              title={config.title || '公示公告/通知要闻'}
               limit={config.limit || 6}
               moreLink="/news?category=公示公告"
             />

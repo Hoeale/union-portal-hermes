@@ -148,6 +148,8 @@ export default function AdminWorkersPage() {
   };
 
   const handleEdit = (worker: Worker) => {
+    window.open(`/admin/workers/${worker.id}`, "_blank");
+    return;
     setEditingId(worker.id);
     setFormData({
       name: worker.name,

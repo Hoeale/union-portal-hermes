@@ -20,8 +20,8 @@ function stripHtml(html: string): string {
   let text = html.replace(/<[^>]*>/g, '');
   // 解码 HTML 实体
   text = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-  // 移除多余空白
-  text = text.replace(/\s+/g, ' ').trim();
+  // 移除多余的换行和制表符，但保留连续空格
+  text = text.replace(/[\t\n\r\f\v]+/g, ' ').trim();
   return text;
 }
 

@@ -498,13 +498,6 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
     setShowPreviewModal(true);
   };
 
-  const handleSetLink = () => {
-    const url = window.prompt('请输入链接地址:');
-    if (url) {
-      editor?.chain().focus().setLink({ href: url }).run();
-    }
-  };
-
   // 从Word文档XML中提取字体颜色信息
   const extractWordColors = async (arrayBuffer: ArrayBuffer): Promise<Map<string, string>> => {
     const colorMap = new Map<string, string>();
@@ -1042,15 +1035,6 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
             </div>
           )}
           <button
-            onClick={handleSetLink}
-            className={`p-2 rounded hover:bg-gray-200 ${
-              editor.isActive('link') ? 'bg-blue-100 text-blue-600' : ''
-            }`}
-            title="插入链接"
-          >
-            <FaLink />
-          </button>
-          <button
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             className={`p-2 rounded hover:bg-gray-200 ${
               editor.isActive('blockquote') ? 'bg-blue-100 text-blue-600' : ''
@@ -1128,14 +1112,7 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
               <FaFileWord />
             </button>
           )}
-          <button
-            onClick={triggerWordImport}
-            disabled={wordImporting}
-            className="p-2 rounded hover:bg-gray-200 disabled:opacity-50"
-            title="导入Word文档"
-          >
-            <FaFileWord className="text-green-600" />
-          </button>
+          {/* Word导入功能已禁用 */}
         </div>
 
         {/* Preview (if enabled) */}

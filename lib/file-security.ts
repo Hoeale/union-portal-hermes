@@ -205,9 +205,19 @@ export async function scanFileContent(filePath: string, mimeType?: string): Prom
   const threats: string[] = [];
   
   try {
-    // 对于图片文件或未知类型的二进制文件，跳过内容扫描
-    // 二进制文件无法用 utf-8 读取，会抛出异常
-    if (!mimeType || mimeType.startsWith('image/') || mimeType.startsWith('video/') || mimeType.startsWith('audio/') || mimeType === 'application/pdf') {
+    // 对于二进制文件（图片、视频、音频、PDF、Office 文档），跳过内容扫描
+    // 这些文件天然是二进制格式，无法用 utf-8 读取
+    if (!mimeType ||
+        mimeType.startsWith('image/') ||
+        mimeType.startsWith('video/') ||
+        mimeType.startsWith('audio/') ||
+        mimeType === 'application/pdf' ||
+        mimeType === 'application/msword' ||
+        mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        mimeType === 'application/vnd.ms-excel' ||
+        mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        mimeType === 'application/zip' ||
+        mimeType === 'application/octet-stream') {
       return { safe: true, threats: [] };
     }
 
