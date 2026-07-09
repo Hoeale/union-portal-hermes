@@ -34,6 +34,19 @@ export default function NavBar() {
     ? config.nav_items.filter((item: NavItem) => item.visible).sort((a: NavItem, b: NavItem) => a.order - b.order)
     : DEFAULT_NAV_ITEMS;
 
+  // 判断当前路径是否属于某个导航项（支持子路径匹配）
+  const isNavActive = (item: NavItem) => {
+    if (pathname === item.href) return true;
+    if (item.href === '/') return false;
+    // 子路径匹配：/news/123 匹配 /news
+    if (pathname?.startsWith(item.href + '/')) return true;
+    // 特殊处理：/view/[date]/[id] 和 /preview/news/[id] 属于新闻中心
+    if (item.id === 'news' && (pathname?.startsWith('/view/') || pathname?.startsWith('/preview/news/'))) return true;
+    // 特殊处理：/preview/policy/[id] 属于政策文件
+    if (item.id === 'policies' && pathname?.startsWith('/preview/policy/')) return true;
+    return false;
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -50,7 +63,7 @@ export default function NavBar() {
             <Link
               href={item.href}
               className={`inline-block px-4 md:px-6 py-4 text-white font-semibold text-base no-underline border-b-4 border-transparent transition-all ${
-                pathname === item.href ? 'bg-white/10 border-[#ffd966]' : 'hover:bg-white/10'
+                isNavActive(item) ? 'bg-white/10 border-[#ffd966]' : 'hover:bg-white/10'
               }`}
             >
               {item.name}
@@ -96,7 +109,7 @@ export default function NavBar() {
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={`block px-6 py-3 text-white font-semibold border-b border-white/10 ${
-                pathname === item.href ? 'bg-white/10' : ''
+                isNavActive(item) ? 'bg-white/10' : ''
               }`}
             >
               {item.name}

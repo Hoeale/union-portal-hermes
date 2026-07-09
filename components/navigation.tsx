@@ -106,7 +106,8 @@ export default function Navigation() {
               {navItems.map((item) => {
                 const isActive = item.href === '/'
                   ? pathname === '/'
-                  : pathname.startsWith(item.href);
+                  : pathname === item.href || pathname.startsWith(item.href + '/')
+                  || (item.name === '新闻中心' && (pathname.startsWith('/view/') || pathname.startsWith('/news/')));
                 return (
                   <Link
                     key={item.name}

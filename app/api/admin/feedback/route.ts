@@ -41,6 +41,10 @@ export async function GET(request: Request) {
 
     const total = await prisma.feedback.count({ where });
     
+    // 获取总数和未读数（用于前端标签显示）
+    const totalCount = await prisma.feedback.count();
+    const unreadCount = await prisma.feedback.count({ where: { isRead: false } });
+    
     const feedbacks = await prisma.feedback.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -51,6 +55,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       data: feedbacks,
       total,
+      totalCount,
+      unreadCount,
       page,
       pageSize,
       totalPages: Math.ceil(total / pageSize),

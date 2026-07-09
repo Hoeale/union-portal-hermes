@@ -33,7 +33,7 @@ function getFileIcon(fileName: string) {
 export default function FileDownloadButton({
   fileUrl,
   fileName,
-  label = '下载文件',
+  label,
   variant = 'primary',
 }: FileDownloadButtonProps) {
   if (!fileUrl) return null;
@@ -58,8 +58,7 @@ export default function FileDownloadButton({
       className={`${baseClasses} ${variantClasses}`}
     >
       <FontAwesomeIcon icon={icon} className="text-base" />
-      <span>{label}</span>
-      <span className="text-xs opacity-75">{displayName}</span>
+      <span>{label || displayName}</span>
     </Link>
   );
 }

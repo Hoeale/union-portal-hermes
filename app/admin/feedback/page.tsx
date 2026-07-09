@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faComments, faTrash, faSpinner, faInfoCircle,
@@ -56,14 +57,19 @@ const STATUS_MAP: Record<string, { label: string; icon: any; color: string; bgCo
 export default function AdminFeedbackPage() {
   const csrfToken = useCsrfToken();
   const { message, showMessage } = useMessage();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>(
+    () => (searchParams.get('filter') as 'all' | 'unread' | 'read') || 'all'
+  );
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[] | null>(null);
@@ -111,6 +117,14 @@ export default function AdminFeedbackPage() {
       setFeedbacks(data.data || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
+      
+      // 获取总数和未读数（用于标签显示）
+      if (data.totalCount !== undefined) {
+        setTotalCount(data.totalCount);
+      }
+      if (data.unreadCount !== undefined) {
+        setUnreadCount(data.unreadCount);
+      }
     } catch (error) {
       logger.error('[Feedback] 获取留言失败:', error);
     } finally {
@@ -121,7 +135,6 @@ export default function AdminFeedbackPage() {
   // 初始加载和筛选条件变化时重新加载
   useEffect(() => {
     fetchFeedbacks();
-    fetchUnreadCount();
   }, [filter, statusFilter, page]);
 
   const fetchComments = async (feedbackId: string) => {
@@ -381,7 +394,7 @@ export default function AdminFeedbackPage() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
         <div className="flex border-b border-gray-100">
           {[
-            { id: 'all', label: '全部', count: total },
+            { id: 'all', label: '全部', count: totalCount },
             { id: 'unread', label: '未读', count: unreadCount },
             { id: 'read', label: '已读' },
           ].map((tab) => (

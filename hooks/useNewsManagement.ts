@@ -67,6 +67,9 @@ export function useNewsManagement() {
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [totalAllNews, setTotalAllNews] = useState(0);
+  const [totalDrafts, setTotalDrafts] = useState(0);
+  const [totalScheduled, setTotalScheduled] = useState(0);
 
   // 批量选择
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -186,6 +189,10 @@ export function useNewsManagement() {
         setFilteredNews(result.data);
         setTotalPages(result.totalPages);
         setTotal(result.total);
+        // 当无筛选条件时，更新总数（用于统计卡片始终显示真实总数）
+        if (categoryFilter === 'all' && !searchTerm && statusFilter === 'all') {
+          setTotalAllNews(result.total);
+        }
       }
     } catch (error) {
       logger.error('Failed to fetch news:', error);
@@ -201,6 +208,7 @@ export function useNewsManagement() {
       if (response.ok) {
         const data = await response.json();
         setDrafts(data.data || []);
+        setTotalDrafts((data.data || []).length);
       }
     } catch (error) {
       logger.error('Failed to fetch drafts:', error);
@@ -216,6 +224,7 @@ export function useNewsManagement() {
         const result = await response.json();
         if (result.success) {
           setScheduledNews(result.data || []);
+          setTotalScheduled((result.data || []).length);
         }
       }
     } catch (error) {
@@ -242,6 +251,10 @@ export function useNewsManagement() {
         announcementRes.json(),
         carouselRes.json(),
       ]);
+
+      if (totalResult.success) {
+        setTotalAllNews(totalResult.total);
+      }
 
       const carouselCount = carouselResult.success
         ? Math.min(carouselResult.data.filter((n: News) => n.is_carousel && n.status === 'published').length, 5)
@@ -703,6 +716,7 @@ export function useNewsManagement() {
     pageSize,
     totalPages,
     total,
+    totalAllNews,
     selectedIds,
     totalCarousel,
     totalByCategory,

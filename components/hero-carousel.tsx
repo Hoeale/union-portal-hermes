@@ -116,78 +116,82 @@ export default function HeroCarousel({
             onMouseLeave={() => setIsPaused(false)}
           >
             {/* Slides */}
-            {news.map((item, index) => (
-              <div
-                key={item.id}
-                className={`absolute inset-0 transition-opacity duration-500 ${
-                  index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                }`}
-              >
-                {/* Image */}
-                {item.image_url && !imageErrors.has(item.id) ? (
-                  <div className="relative w-full h-full bg-gradient-to-br from-[#b71c1c] to-[#8b0000]">
-                    <Image
-                      src={item.image_url}
-                      alt=""
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 66vw"
-                      priority={index === 0}
-                      className="object-cover"
-                      onError={() => {
-                        // 图片加载失败时隐藏图片，显示红色渐变背景
-                        setImageErrors(prev => new Set(prev).add(item.id));
-                      }}
-                    />
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                  </div>
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#b71c1c] to-[#8b0000]" />
-                )}
-
-                {/* Content Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8 z-20">
-                  {/* Category Badge - 公告类不显示 */}
-                  {item.category !== '公告' && (
-                    <span className="inline-block px-3 py-1 mb-3 text-xs font-semibold bg-[#b71c1c] text-white rounded-full">
-                      {item.category}
-                    </span>
-                  )}
-
-                  {/* Title */}
-                  {item.link_url ? (
+            {news.map((item, index) => {
+              const detailUrl = item.link_url || `/view/${new Date(item.published_at).toISOString().slice(0,10).replace(/-/g,'')}/${item.id.replace(/-/g,'').substring(0,5)}`;
+              const isExternal = !!item.link_url;
+              
+              return (
+                <div
+                  key={item.id}
+                  className={`absolute inset-0 transition-opacity duration-500 ${
+                    index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                  }`}
+                >
+                  {/* 整个轮播图可点击跳转 */}
+                  {isExternal ? (
                     <a
-                      href={item.link_url}
+                      href={detailUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-white hover:text-gray-200 transition-colors"
-                    >
-                      <h2 className="text-xl lg:text-2xl font-bold line-clamp-2 leading-tight mb-2">
-                        {item.title}
-                      </h2>
-                    </a>
+                      className="absolute inset-0 z-30 cursor-pointer"
+                      aria-label={item.title}
+                    />
                   ) : (
                     <Link
-                      href={`/view/${new Date(item.published_at).toISOString().slice(0,10).replace(/-/g,'')}/${item.id.replace(/-/g,'').substring(0,5)}`}
-                      className="block text-white hover:text-gray-200 transition-colors"
-                    >
-                      <h2 className="text-xl lg:text-2xl font-bold line-clamp-2 leading-tight mb-2">
-                        {item.title}
-                      </h2>
-                    </Link>
+                      href={detailUrl}
+                      className="absolute inset-0 z-30 cursor-pointer"
+                      aria-label={item.title}
+                    />
+                  )}
+                  
+                  {/* Image */}
+                  {item.image_url && !imageErrors.has(item.id) ? (
+                    <div className="relative w-full h-full bg-gradient-to-br from-[#b71c1c] to-[#8b0000]">
+                      <Image
+                        src={item.image_url}
+                        alt=""
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 66vw"
+                        priority={index === 0}
+                        className="object-cover pointer-events-none"
+                        onError={() => {
+                          // 图片加载失败时隐藏图片，显示红色渐变背景
+                          setImageErrors(prev => new Set(prev).add(item.id));
+                        }}
+                      />
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#b71c1c] to-[#8b0000]" />
                   )}
 
-                  {/* Date */}
-                  <p className="text-white/80 text-sm">
-                    {new Date(item.published_at).toLocaleDateString('zh-CN', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                    })}
-                  </p>
+                  {/* Content Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8 z-20 pointer-events-none">
+                    {/* Category Badge - 公告类不显示 */}
+                    {item.category !== '公告' && (
+                      <span className="inline-block px-3 py-1 mb-3 text-xs font-semibold bg-[#b71c1c] text-white rounded-full">
+                        {item.category}
+                      </span>
+                    )}
+
+                    {/* Title */}
+                    <h2 className="text-xl lg:text-2xl font-bold line-clamp-2 leading-tight mb-2 text-white">
+                      {item.title}
+                    </h2>
+
+                    {/* Date */}
+                    <p className="text-white/80 text-sm">
+                      {new Date(item.published_at).toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Navigation Arrows */}
             {news.length > 1 && (

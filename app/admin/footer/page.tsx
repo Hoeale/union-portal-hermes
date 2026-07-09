@@ -22,7 +22,8 @@ interface FooterConfig {
   contact_email: string;
   contact_email_label: string;
   copyright_text: string;
-  copyright_show_year: boolean;
+  copyright_year: string;
+  show_year: boolean;
   copyright_reserved: string;
   show_footer: boolean;
   show_friendly_links: boolean;
@@ -33,6 +34,8 @@ interface FooterConfig {
   show_terms: boolean;
   show_sitemap: boolean;
   show_contact_email: boolean;
+  icp_text: string;
+  icp_url: string;
 }
 
 interface SiteInfo {
@@ -48,7 +51,8 @@ const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   contact_email: 'contact@example.com',
   contact_email_label: '联系我们',
   copyright_text: '西安高新区总工会',
-  copyright_show_year: true,
+  copyright_year: '2026',
+  show_year: true,
   copyright_reserved: '版权所有',
   show_footer: true,
   show_friendly_links: true,
@@ -59,6 +63,8 @@ const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   show_terms: false,
   show_sitemap: false,
   show_contact_email: true,
+  icp_text: '',
+  icp_url: '',
 };
 
 const DEFAULT_SITE_INFO: SiteInfo = {
@@ -117,6 +123,10 @@ export default function AdminFooterPage() {
         }
         if (configData.site_info) {
           setSiteInfo({ ...DEFAULT_SITE_INFO, ...configData.site_info });
+        }
+        // 从 Header 配置同步 logo 到页脚（统一 Logo 管理）
+        if (configData.v2_header?.logo) {
+          setFooterConfig(prev => ({ ...prev, logo_url: configData.v2_header.logo }));
         }
       }
     } catch (error) {
@@ -295,9 +305,6 @@ export default function AdminFooterPage() {
           >
             <FontAwesomeIcon icon={faLink} className="mr-2" />
             友情链接
-            <span className="ml-2 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-              {links.length}
-            </span>
           </button>
           <button
             onClick={() => setActiveTab('config')}
@@ -471,14 +478,21 @@ export default function AdminFooterPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Logo 图片路径
                 </label>
-                <input
-                  type="text"
-                  value={footerConfig.logo_url}
-                  onChange={(e) => setFooterConfig({ ...footerConfig, logo_url: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                  placeholder="/logo.png"
-                />
-                <p className="mt-2 text-sm text-gray-500">页脚 Logo 图片路径，相对于 public 目录</p>
+                <div className="flex items-center gap-2">
+                  {footerConfig.logo_url && (
+                    <img src={footerConfig.logo_url} alt="Logo" className="h-12 w-auto border border-gray-200 rounded" />
+                  )}
+                  <input
+                    type="text"
+                    value={footerConfig.logo_url}
+                    readOnly
+                    disabled
+                    className="flex-1 px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+                <p className="mt-2 text-sm text-blue-600">
+                  💡 Logo 图片统一管理于 <strong>首页内容管理 → Header 配置</strong>，此处仅展示。如需更换 Logo，请前往该页面设置。
+                </p>
               </div>
             </div>
 
@@ -563,15 +577,31 @@ export default function AdminFooterPage() {
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  id="copyright_show_year"
-                  checked={footerConfig.copyright_show_year}
-                  onChange={(e) => setFooterConfig({ ...footerConfig, copyright_show_year: e.target.checked })}
+                  id="show_year"
+                  checked={footerConfig.show_year}
+                  onChange={(e) => setFooterConfig({ ...footerConfig, show_year: e.target.checked })}
                   className="w-4 h-4 text-[#b71c1c] border-gray-300 rounded focus:ring-[#b71c1c]"
                 />
-                <label htmlFor="copyright_show_year" className="text-sm text-gray-700">
-                  显示年份（© 2026）
+                <label htmlFor="show_year" className="text-sm text-gray-700">
+                  显示年份
                 </label>
               </div>
+
+              {footerConfig.show_year && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    年份内容
+                  </label>
+                  <input
+                    type="text"
+                    value={footerConfig.copyright_year}
+                    onChange={(e) => setFooterConfig({ ...footerConfig, copyright_year: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
+                    placeholder="2026 或 2023-2026"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">支持手动输入年份，如"2026"或"2023-2026"</p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -584,6 +614,34 @@ export default function AdminFooterPage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
                   placeholder="版权所有"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  ICP备案号文字
+                </label>
+                <input
+                  type="text"
+                  value={footerConfig.icp_text}
+                  onChange={(e) => setFooterConfig({ ...footerConfig, icp_text: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
+                  placeholder="陕ICP备2025071322号"
+                />
+                <p className="mt-1 text-xs text-gray-500">留空则不显示ICP备案</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  ICP备案链接
+                </label>
+                <input
+                  type="text"
+                  value={footerConfig.icp_url}
+                  onChange={(e) => setFooterConfig({ ...footerConfig, icp_url: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
+                  placeholder="https://beian.miit.gov.cn/"
+                />
+                <p className="mt-1 text-xs text-gray-500">点击备案号跳转的目标链接，如工信部备案查询地址</p>
               </div>
             </div>
 

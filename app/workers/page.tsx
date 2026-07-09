@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import FrontendWrapper from '@/components/frontend-wrapper';
 
 interface Worker {
@@ -29,7 +30,6 @@ function WorkersContent() {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
 
@@ -147,17 +147,15 @@ function WorkersContent() {
 
             {/* 卡片内容 */}
             <div className="p-6">
-              <p className="text-gray-700 text-sm mb-4 line-clamp-3 whitespace-pre-wrap">
-                {stripHtml(worker.story)}
-              </p>
-
               {/* 查看详情按钮 */}
-              <button
-                onClick={() => setSelectedWorker(worker)}
-                className="w-full bg-[#b71c1c] text-white py-2 px-4 rounded-md hover:bg-[#8b0000] transition-colors text-sm"
+              <Link
+                href={`/workers/${worker.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-[#b71c1c] text-white py-2 px-4 rounded-md hover:bg-[#8b0000] transition-colors text-sm text-center block"
               >
                 了解更多
-              </button>
+              </Link>
             </div>
           </div>
         ))}
@@ -241,65 +239,7 @@ function WorkersContent() {
         </div>
       </div>
 
-      {/* 详情弹窗 */}
-      {selectedWorker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-fade-in">
-            {/* 弹窗头部 */}
-            <div className="bg-gradient-to-br from-[#b71c1c] to-[#8b0000] text-white p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full overflow-hidden bg-white/20 flex-shrink-0 relative">
-                    {selectedWorker.imageUrl ? (
-                      <img
-                        src={selectedWorker.imageUrl}
-                        alt={selectedWorker.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <svg className="w-full h-full p-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedWorker.name}</h2>
-                    <p className="text-white/90 mt-1">{selectedWorker.title}</p>
-                    <p className="text-sm text-white/80 mt-1">{selectedWorker.department}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedWorker(null)}
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
 
-            {/* 弹窗内容 - 富文本 */}
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">先进事迹</h3>
-              <div
-                className="rich-text-content max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedWorker.story }}
-              />
-            </div>
-
-            {/* 弹窗底部 */}
-            <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-              <button
-                onClick={() => setSelectedWorker(null)}
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                关闭
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

@@ -41,7 +41,8 @@ export interface FooterConfig {
   contact_email: string;
   contact_email_label: string;
   copyright_text: string;
-  copyright_show_year: boolean;
+  copyright_year: string;
+  show_year: boolean;
   copyright_reserved: string;
   show_footer: boolean;
   show_friendly_links: boolean;
@@ -52,6 +53,8 @@ export interface FooterConfig {
   show_terms: boolean;
   show_sitemap: boolean;
   show_contact_email: boolean;
+  icp_text: string;
+  icp_url: string;
 }
 
 export interface FriendlyLink {

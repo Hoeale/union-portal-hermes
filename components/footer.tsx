@@ -21,7 +21,8 @@ interface FooterConfig {
   contact_email: string;
   contact_email_label: string;
   copyright_text: string;
-  copyright_show_year: boolean;
+  copyright_year: string;
+  show_year: boolean;
   copyright_reserved: string;
   show_footer: boolean;
   show_friendly_links: boolean;
@@ -32,6 +33,8 @@ interface FooterConfig {
   show_terms: boolean;
   show_sitemap: boolean;
   show_contact_email: boolean;
+  icp_text: string;
+  icp_url: string;
 }
 
 interface SiteInfo {
@@ -51,7 +54,8 @@ const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   contact_email: 'contact@example.com',
   contact_email_label: '联系我们',
   copyright_text: '西安高新区总工会',
-  copyright_show_year: true,
+  copyright_year: '2026',
+  show_year: true,
   copyright_reserved: '版权所有',
   show_footer: true,
   show_friendly_links: true,
@@ -62,6 +66,8 @@ const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   show_terms: false,
   show_sitemap: false,
   show_contact_email: false, // 默认隐藏
+  icp_text: '',
+  icp_url: '',
 };
 
 export default function Footer({ compact = false }: FooterProps) {
@@ -92,7 +98,7 @@ export default function Footer({ compact = false }: FooterProps) {
   }
 
   // 构建版权文字
-  const copyrightYear = footerConfig.copyright_show_year ? new Date().getFullYear() : '';
+  const copyrightYear = footerConfig.show_year ? (footerConfig.copyright_year || '') : '';
   const copyrightText = `${copyrightYear} ${footerConfig.copyright_text} ${footerConfig.copyright_reserved}`.trim();
 
   // 紧凑模式（首页使用）：单行版权 + 友情链接单行展示
@@ -117,6 +123,18 @@ export default function Footer({ compact = false }: FooterProps) {
           <div className="flex flex-col items-center justify-center gap-2 text-sm text-[hsl(var(--foreground-muted))]">
             <div className="flex items-center gap-3">
               <span>&copy; {copyrightText}</span>
+              {footerConfig.icp_text && (
+                <>
+                  <span>|</span>
+                  {footerConfig.icp_url ? (
+                    <a href={footerConfig.icp_url} target="_blank" rel="noopener noreferrer" className="hover:text-[hsl(var(--primary))] transition-colors">
+                      {footerConfig.icp_text}
+                    </a>
+                  ) : (
+                    <span>{footerConfig.icp_text}</span>
+                  )}
+                </>
+              )}
             </div>
             <div className="flex items-center gap-4">
               {footerConfig.show_privacy_policy && (
@@ -241,6 +259,18 @@ export default function Footer({ compact = false }: FooterProps) {
             <div className="flex flex-col items-center justify-center gap-4 text-sm text-[hsl(var(--foreground-muted))]">
               <div className="flex items-center gap-2">
                 <span>&copy; {copyrightText}</span>
+                {footerConfig.icp_text && (
+                  <>
+                    <span>|</span>
+                    {footerConfig.icp_url ? (
+                      <a href={footerConfig.icp_url} target="_blank" rel="noopener noreferrer" className="hover:text-[hsl(var(--primary))] transition-colors">
+                        {footerConfig.icp_text}
+                      </a>
+                    ) : (
+                      <span>{footerConfig.icp_text}</span>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="flex items-center gap-6">

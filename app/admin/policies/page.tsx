@@ -132,6 +132,10 @@ function AdminPoliciesPageContent() {
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('09:00');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [statusConfirmPolicyId, setStatusConfirmPolicyId] = useState<string | null>(null);
+  const [statusConfirmTarget, setStatusConfirmTarget] = useState<'pending' | 'published' | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [toggleConfirm, setToggleConfirm] = useState<{ id: string; type: 'active' | 'download'; value: boolean } | null>(null);
   const csrfToken = useCsrfToken();
   const { message, showMessage } = useMessage();
   const [CATEGORIES, setCATEGORIES] = useState<string[]>([
@@ -373,14 +377,20 @@ function AdminPoliciesPageContent() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这条政策吗？')) return;
+    setDeleteConfirmId(id);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    
     try {
-      await apiClient.delete(`/api/admin/policies?id=${id}`, { csrfToken });
+      await apiClient.delete(`/api/admin/policies?id=${deleteConfirmId}`, { csrfToken });
       showMessage('success', '删除成功');
       fetchPolicies();
     } catch (error) {
       showMessage('error', '删除失败，请重试');
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -400,20 +410,27 @@ function AdminPoliciesPageContent() {
   };
 
   const toggleDownload = async (id: string, enableDownload: boolean) => {
-    try {
-      await apiClient.put('/api/admin/policies', { id, enableDownload }, { csrfToken });
-      fetchPolicies();
-    } catch (error) {
-      showMessage('error', '操作失败');
-    }
+    setToggleConfirm({ id, type: 'download', value: enableDownload });
   };
 
   const toggleActive = async (id: string, isActive: boolean) => {
+    setToggleConfirm({ id, type: 'active', value: isActive });
+  };
+
+  const confirmToggle = async () => {
+    if (!toggleConfirm) return;
+    
     try {
-      await apiClient.put('/api/admin/policies', { id, isActive }, { csrfToken });
+      if (toggleConfirm.type === 'download') {
+        await apiClient.put('/api/admin/policies', { id: toggleConfirm.id, enableDownload: toggleConfirm.value }, { csrfToken });
+      } else {
+        await apiClient.put('/api/admin/policies', { id: toggleConfirm.id, isActive: toggleConfirm.value }, { csrfToken });
+      }
       fetchPolicies();
     } catch (error) {
       showMessage('error', '操作失败');
+    } finally {
+      setToggleConfirm(null);
     }
   };
 
@@ -528,7 +545,11 @@ function AdminPoliciesPageContent() {
                     <td className="px-4 py-3 text-sm text-gray-600">{policy.category}</td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => toggleStatus(policy.id, policy.status === 'pending' ? 'published' : 'pending')}
+                        onClick={() => {
+                          const targetStatus = policy.status === 'pending' ? 'published' : 'pending';
+                          setStatusConfirmPolicyId(policy.id);
+                          setStatusConfirmTarget(targetStatus);
+                        }}
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
                           policy.status === 'published'
                             ? 'bg-green-100 text-green-700'
@@ -733,6 +754,137 @@ function AdminPoliciesPageContent() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 状态切换确认弹窗 */}
+      {statusConfirmPolicyId && statusConfirmTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => {
+            setStatusConfirmPolicyId(null);
+            setStatusConfirmTarget(null);
+          }} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                statusConfirmTarget === 'published' ? 'bg-green-100' : 'bg-yellow-100'
+              }`}>
+                <FontAwesomeIcon 
+                  icon={statusConfirmTarget === 'published' ? faCheck : faXmark} 
+                  className={`text-xl ${statusConfirmTarget === 'published' ? 'text-green-600' : 'text-yellow-600'}`}
+                />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">
+                确认{statusConfirmTarget === 'published' ? '发布' : '取消发布'}此政策？
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              {statusConfirmTarget === 'published' 
+                ? '发布后，该政策将立即在前台政策文件页面展示，请确认内容无误。'
+                : '取消发布后，该政策将从前台隐藏，仅保留在待发布列表中。'
+              }
+            </p>
+            <p className="text-sm text-gray-600 mb-6">您可以随时再次切换状态。</p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => {
+                  setStatusConfirmPolicyId(null);
+                  setStatusConfirmTarget(null);
+                }}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  if (statusConfirmPolicyId && statusConfirmTarget) {
+                    toggleStatus(statusConfirmPolicyId, statusConfirmTarget);
+                  }
+                  setStatusConfirmPolicyId(null);
+                  setStatusConfirmTarget(null);
+                }}
+                className={`px-4 py-2 text-sm text-white rounded-lg flex items-center gap-2 ${
+                  statusConfirmTarget === 'published'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-yellow-600 hover:bg-yellow-700'
+                }`}
+              >
+                <FontAwesomeIcon icon={statusConfirmTarget === 'published' ? faCheck : faXmark} />
+                确认{statusConfirmTarget === 'published' ? '发布' : '取消发布'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 删除确认弹窗 */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-red-100">
+                <FontAwesomeIcon icon={faTrash} className="text-xl text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">确认删除此政策？</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">删除后，该政策将从前后台完全移除。</p>
+            <p className="text-sm text-red-600 font-medium mb-6">⚠ 此操作不可恢复！</p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm text-white rounded-lg bg-red-600 hover:bg-red-700 flex items-center gap-2"
+              >
+                <FontAwesomeIcon icon={faTrash} />
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 开关切换确认弹窗 */}
+      {toggleConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setToggleConfirm(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-100">
+                <FontAwesomeIcon icon={faInfoCircle} className="text-xl text-blue-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">
+                确认{toggleConfirm.type === 'active' ? '切换显示状态' : '切换下载状态'}？
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              {toggleConfirm.type === 'active' 
+                ? (toggleConfirm.value ? '启用后，该政策将在前台列表中显示。' : '禁用后，该政策将从前台列表中隐藏。')
+                : (toggleConfirm.value ? '启用后，访客可以下载该政策的附件。' : '禁用后，访客将无法下载该政策的附件。')
+              }
+            </p>
+            <p className="text-sm text-gray-600 mb-6">您可以随时再次切换状态。</p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setToggleConfirm(null)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmToggle}
+                className="px-4 py-2 text-sm text-white rounded-lg bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+              >
+                <FontAwesomeIcon icon={faCheck} />
+                确认
+              </button>
             </div>
           </div>
         </div>

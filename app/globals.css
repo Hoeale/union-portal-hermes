@@ -343,11 +343,17 @@
   margin: 0.75rem 0 0.5rem;
 }
 
+/* 富文本段落样式 - 保留 pre-wrap 以确保空格和换行正确显示 */
 .rich-text-content p {
   margin: 0.75rem 0;
   line-height: 1.75;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* 字号支持 - 保留编辑器设置的 font-size */
+.rich-text-content span[style*="font-size"] {
+  /* font-size 通过内联样式设置，此处不覆盖 */
 }
 
 /* ⚠️ 重要：空段落保留为段落间隔，不要改为 display: none
@@ -397,44 +403,47 @@
 
 /* 富文本容器 - normal 让 <p> 等块级元素正常布局 */
 .rich-text-content {
-  white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
 
-/* 富文本段落不需要 pre-wrap，继承容器的 normal */
+/* 富文本段落统一样式 */
 .rich-text-content p,
 .rich-text-content div {
   word-break: break-word;
 }
 
+/* 编辑器中的 <br> (Shift+Enter 硬换行) 在前端显示为正常换行 */
+.rich-text-content br {
+  content: '';
+}
+
+/* 图片对齐样式 - 使用 flex 布局，与编辑器 NodeView 保持一致 */
 .rich-text-content img {
   max-width: 100%;
   height: auto;
   border-radius: 0.5rem;
-  margin: 1rem auto;
   max-height: 500px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   display: block;
+  /* 默认居中 */
+  margin: 1rem auto;
 }
 
-/* 图片对齐样式 - 支持 align 和 data-align 属性 */
-.rich-text-content img[align="left"],
+/* 左对齐 - 匹配编辑器 NodeView 的 justify-content: flex-start */
 .rich-text-content img[data-align="left"] {
   margin-left: 0;
   margin-right: auto;
 }
 
-.rich-text-content img[align="right"],
+/* 右对齐 - 匹配编辑器 NodeView 的 justify-content: flex-end */
 .rich-text-content img[data-align="right"] {
   margin-left: auto;
   margin-right: 0;
 }
 
-.rich-text-content img[align="center"],
-.rich-text-content img[data-align="center"],
-.rich-text-content img.align-center,
-.rich-text-content p[style*="text-align: center"] img {
+/* 居中对齐 - 匹配编辑器 NodeView 的 justify-content: center */
+.rich-text-content img[data-align="center"] {
   margin-left: auto;
   margin-right: auto;
 }

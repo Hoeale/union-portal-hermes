@@ -4,8 +4,10 @@ import { NewsCategory } from '@/hooks/useNewsManagement';
 
 interface NewsStatsProps {
   total: number;
+  totalAllNews: number;
   totalCarousel: number;
   categories: NewsCategory[];
+  statusFilter: 'all' | 'pending' | 'draft' | 'scheduled';
   onCategoryClick: (categoryName: string) => void;
   onCarouselClick: () => void;
   onStatusFilterChange: (status: 'all' | 'pending' | 'draft' | 'scheduled') => void;
@@ -14,18 +16,46 @@ interface NewsStatsProps {
 
 export default function NewsStats({
   total,
+  totalAllNews,
+  totalDrafts,
+  totalScheduled,
   totalCarousel,
   categories,
+  statusFilter,
   onCategoryClick,
   onCarouselClick,
   onStatusFilterChange,
   onPageChange,
 }: NewsStatsProps) {
+  // 根据当前筛选状态决定显示哪个数字
+  const displayTotal = () => {
+    switch (statusFilter) {
+      case 'pending':
+        return total;
+      case 'draft':
+        return totalDrafts;
+      case 'scheduled':
+        return totalScheduled;
+      case 'all':
+      default:
+        return totalAllNews;
+    }
+  };
+
+  const statusLabel = () => {
+    switch (statusFilter) {
+      case 'pending': return '待发布';
+      case 'draft': return '草稿';
+      case 'scheduled': return '定时发布';
+      default: return '总数';
+    }
+  };
+
   return (
     <div className="grid grid-cols-5 gap-4">
       <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-        <div className="text-3xl font-bold text-[#b71c1c]">{total}</div>
-        <div className="text-sm text-gray-600 mt-1">总数</div>
+        <div className="text-3xl font-bold text-[#b71c1c]">{displayTotal()}</div>
+        <div className="text-sm text-gray-600 mt-1">{statusLabel()}</div>
       </div>
       {categories.map((cat) => (
         <div

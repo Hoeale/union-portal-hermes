@@ -148,9 +148,8 @@ export default function AdminWorkersPage() {
   };
 
   const handleEdit = (worker: Worker) => {
-    window.open(`/admin/workers/${worker.id}`, "_blank");
-    return;
     setEditingId(worker.id);
+    setIsCreating(false);
     setFormData({
       name: worker.name,
       title: worker.title,
@@ -421,11 +420,25 @@ export default function AdminWorkersPage() {
                 <div className="flex-1">
                   {/* Local Upload */}
                   {formData.imageSourceType === 'local' && (
-                    <label className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#b71c1c] transition-colors cursor-pointer">
+                    <label 
+                      className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#b71c1c] transition-colors cursor-pointer"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const file = e.dataTransfer.files?.[0];
+                        if (file && file.type.startsWith('image/')) {
+                          await handleAvatarUpload(file);
+                        }
+                      }}
+                    >
                       <div className="text-center">
                         <FontAwesomeIcon icon={faUpload} className="text-2xl text-gray-400 mb-2" />
                         <p className="text-sm text-gray-600">
-                          {uploading ? '上传中...' : '点击上传或拖拽文件'}
+                          {uploading ? '上传中...' : '点击上传文件'}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">支持 JPG, PNG, GIF（最大5MB）</p>
                       </div>

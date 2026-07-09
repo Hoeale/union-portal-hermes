@@ -24,7 +24,7 @@ const TYPE_TO_CATEGORY = {
 // 文件大小限制（字节）
 const MAX_SIZES = {
   image: 10 * 1024 * 1024, // 10MB
-  document: 50 * 1024 * 1024, // 50MB
+  document: 100 * 1024 * 1024, // 100MB
 };
 
 export async function POST(request: NextRequest) {

@@ -12,11 +12,59 @@ import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
-import { FaBold, FaItalic, FaUnderline, FaListUl, FaListOl, FaHeading, FaUndo, FaRedo, FaImage, FaAlignLeft, FaAlignCenter, FaAlignRight, FaAlignJustify, FaLink, FaCode, FaQuoteLeft, FaEye, FaTable, FaExpand, FaCompress, FaFileWord, FaChartBar, FaSearchPlus, FaSearchMinus, FaTrash, FaCropAlt } from 'react-icons/fa';
+import HardBreak from '@tiptap/extension-hard-break';
+import { Mark, mergeAttributes } from '@tiptap/core';
+import { FaBold, FaItalic, FaUnderline, FaListUl, FaListOl, FaHeading, FaUndo, FaRedo, FaImage, FaAlignLeft, FaAlignCenter, FaAlignRight, FaAlignJustify, FaLink, FaCode, FaQuoteLeft, FaEye, FaTable, FaExpand, FaCompress, FaFileWord, FaChartBar, FaSearchPlus, FaSearchMinus, FaTrash, FaCropAlt, FaTextHeight } from 'react-icons/fa';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
 import EditorTemplatePicker from './editor-template-picker';
+
+// 自定义 FontSize Mark 扩展 — 作用于文本标记而非节点，避免修改整段大小
+const FontSize = Mark.create({
+  name: 'fontSize',
+  addOptions() {
+    return {
+      types: ['text'],
+    };
+  },
+  addAttributes() {
+    return {
+      fontSize: {
+        default: null,
+        parseHTML: (element) => element.style.fontSize || null,
+        renderHTML: (attributes) => {
+          if (!attributes.fontSize) return {};
+          return {
+            style: `font-size: ${attributes.fontSize}`,
+          };
+        },
+      },
+    };
+  },
+  parseHTML() {
+    return [
+      {
+        tag: 'span[style*="font-size"]',
+      },
+    ];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+  },
+  addCommands() {
+    return {
+      setFontSize:
+        (fontSize) =>
+        ({ chain }) =>
+          chain().setMark(this.name, { fontSize }).run(),
+      unsetFontSize:
+        () =>
+        ({ chain }) =>
+          chain().unsetMark(this.name).run(),
+    };
+  },
+});
 
 // 可拖拽缩放的图片 NodeView
 function ResizableImageNodeView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
@@ -184,8 +232,8 @@ const CustomImage = Image.extend({
           return element.getAttribute('align') || element.getAttribute('data-align') || 'center';
         },
         renderHTML: (attributes) => {
-          if (!attributes.align || attributes.align === 'center') return {};
-          return { align: attributes.align, 'data-align': attributes.align };
+          // 始终输出 data-align 属性，确保前端 CSS 能正确匹配
+          return { 'data-align': attributes.align || 'center' };
         },
       },
     };
@@ -212,19 +260,15 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
   const [wordCount, setWordCount] = useState({ words: 0, characters: 0 });
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
-  // Word文档导入相关
-  const [showWordImport, setShowWordImport] = useState(false);
-  const [wordImporting, setWordImporting] = useState(false);
-  const [wordImportProgress, setWordImportProgress] = useState('');
 
-  // 表格相关
-  const [showTableGrid, setShowTableGrid] = useState(false);
-  const [tableGridHover, setTableGridHover] = useState({ rows: 0, cols: 0 });
-  const [isInTable, setIsInTable] = useState(false);
 
   // 字体颜色选择器
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [currentColor, setCurrentColor] = useState('#000000');
+
+  // 字号选择器
+  const [showFontSizePicker, setShowFontSizePicker] = useState(false);
+  const [currentFontSize, setCurrentFontSize] = useState('');
 
   // 图片编辑相关
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
@@ -242,7 +286,9 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
         heading: {
           levels: [1, 2, 3, 4],
         },
+        hardBreak: false,  // 用自定义 HardBreak 扩展替代 StarterKit 默认
       }),
+      HardBreak,
       Underline,
       CustomImage,
       Link.configure({
@@ -250,6 +296,7 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
       }),
       TextStyle,
       Color,
+      FontSize,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
@@ -268,11 +315,6 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
         words: text.trim() ? text.trim().split(/\s+/).length : 0,
         characters: text.length,
       });
-      // 检测光标是否在表格内
-      setIsInTable(editor.isActive('table'));
-    },
-    onSelectionUpdate: ({ editor }) => {
-      setIsInTable(editor.isActive('table'));
     },
     editorProps: {
       handleDOMEvents: {
@@ -327,6 +369,20 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
       },
     },
   });
+
+  // 监听 content prop 变化，同步到编辑器（修复编辑切换时内容不更新的问题）
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
+  // 监听 NodeView 中的图片选中事件
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
   // 监听 NodeView 中的图片选中事件
   useEffect(() => {
@@ -498,192 +554,7 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
     setShowPreviewModal(true);
   };
 
-  // 从Word文档XML中提取字体颜色信息
-  const extractWordColors = async (arrayBuffer: ArrayBuffer): Promise<Map<string, string>> => {
-    const colorMap = new Map<string, string>();
-    try {
-      const zip = await JSZip.loadAsync(arrayBuffer);
-      const documentXml = await zip.file('word/document.xml')?.async('string');
-      if (!documentXml) return colorMap;
 
-      // 解析XML，提取每个run的文本和颜色
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(documentXml, 'text/xml');
-      const runs = doc.getElementsByTagName('w:r');
-
-      for (let i = 0; i < runs.length; i++) {
-        const run = runs[i];
-        const colorElem = run.getElementsByTagName('w:color')[0];
-        const textElem = run.getElementsByTagName('w:t')[0];
-        
-        if (colorElem && textElem) {
-          const colorVal = colorElem.getAttribute('w:val');
-          const text = textElem.textContent || '';
-          if (colorVal && text.trim()) {
-            // Word颜色格式为RRGGBB，转换为#RRGGBB
-            const hexColor = '#' + colorVal.toUpperCase();
-            colorMap.set(text.trim(), hexColor);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('提取Word颜色信息失败:', error);
-    }
-    return colorMap;
-  };
-
-  // 将颜色信息应用到HTML
-  const applyColorsToHtml = (html: string, colorMap: Map<string, string>): string => {
-    let result = html;
-    colorMap.forEach((color, text) => {
-      // 转义特殊字符用于正则
-      const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // 匹配文本并包裹在带有颜色的span中
-      const regex = new RegExp(`(?<!<[^>]*)(${escapedText})(?![^<]*>)`, 'g');
-      result = result.replace(regex, `<span style="color: ${color}">$1</span>`);
-    });
-    return result;
-  };
-
-  // Word文档导入处理
-  const handleWordImport = async (file: File) => {
-    if (!editor) return;
-    
-    setWordImporting(true);
-    setWordImportProgress('正在解析Word文档...');
-    
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      
-      // 检查文件大小
-      const fileSizeMB = file.size / (1024 * 1024);
-      if (fileSizeMB > 20) {
-        alert('文件过大（超过20MB），可能导致导入失败');
-      }
-      
-      // 自定义样式映射，保留更多格式
-      const styleMap = [
-        // 保留字体颜色
-        'u[style] => u',
-        'b[style] => b',
-        'i[style] => i',
-        'p[style-name="Heading 1"] => h1:fresh',
-        'p[style-name="Heading 2"] => h2:fresh',
-        'p[style-name="Heading 3"] => h3:fresh',
-        'p[style-name="Heading 4"] => h4:fresh',
-        'p[style-name="Normal"] => p:fresh',
-        'p => p',
-        'table => table',
-        'tr => tr',
-        'td => td',
-        'th => th',
-        'ul => ul',
-        'ol => ol',
-        'li => li',
-      ];
-      
-      // 转换Word为HTML，保留图片和格式
-      const result = await mammoth.convertToHtml(
-        { arrayBuffer },
-        {
-          styleMap: styleMap,
-          convertImage: mammoth.images.imgElement(async (image: any) => {
-            try {
-              const buffer = await image.read('base64');
-              const mimeType = image.contentType || 'image/png';
-              const dataUrl = `data:${mimeType};base64,${buffer}`;
-              return { src: dataUrl };
-            } catch (imgError) {
-              console.warn('图片转换失败:', imgError);
-              return { src: '' };
-            }
-          }),
-        }
-      );
-      
-      setWordImportProgress('正在提取字体颜色...');
-      
-      // 提取Word文档中的字体颜色信息
-      const colorMap = await extractWordColors(arrayBuffer);
-      
-      setWordImportProgress('正在插入内容...');
-      
-      let html = result.value;
-      
-      // 应用字体颜色到HTML
-      if (colorMap.size > 0) {
-        html = applyColorsToHtml(html, colorMap);
-        console.log(`已应用 ${colorMap.size} 个颜色标记`);
-      }
-      
-      // 检查是否为空
-      if (!html || html.trim() === '' || html === '<p></p>') {
-        alert('Word文档内容为空或格式不支持，请尝试复制粘贴内容');
-        setWordImporting(false);
-        setWordImportProgress('');
-        return;
-      }
-      
-      // 清理HTML中的空段落
-      const cleanedHtml = html
-        .replace(/<p>\s*<\/p>/g, '')
-        .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '')
-        .replace(/<p>\s*<span[^>]*>\s*<\/span>\s*<\/p>/g, '');
-      
-      // 使用 insertContent 插入，它比 setContent 更安全
-      try {
-        editor.chain().focus().insertContent(cleanedHtml).run();
-      } catch (insertError) {
-        console.error('HTML插入失败，尝试纯文本方式:', insertError);
-        // 如果HTML插入失败，尝试提取纯文本
-        const textContent = cleanedHtml.replace(/<[^>]+>/g, '');
-        editor.chain().focus().insertContent(textContent).run();
-      }
-      
-      // 显示警告信息（如果有）
-      if (result.messages.length > 0) {
-        const warnings = result.messages.filter((m: any) => m.type === 'warning');
-        if (warnings.length > 0) {
-          console.warn('Word导入警告:', warnings);
-        }
-      }
-      
-      setWordImportProgress('');
-      setWordImporting(false);
-    } catch (error) {
-      console.error('Word导入失败:', error);
-      alert('Word文档导入失败，请检查：\n1. 文件格式是否为 .docx\n2. 文件是否损坏\n3. 文件大小是否过大');
-      setWordImportProgress('');
-      setWordImporting(false);
-    }
-  };
-
-  const triggerWordImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        await handleWordImport(file);
-      }
-    };
-    input.click();
-  };
-
-  // 点击外部关闭表格选择器
-  useEffect(() => {
-    if (!showTableGrid) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('[data-table-grid]')) {
-        setShowTableGrid(false);
-        setTableGridHover({ rows: 0, cols: 0 });
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showTableGrid]);
 
   // 点击外部关闭图片菜单
   useEffect(() => {
@@ -710,6 +581,19 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showColorPicker]);
+
+  // 点击外部关闭字号选择器
+  useEffect(() => {
+    if (!showFontSizePicker) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-font-size-picker]')) {
+        setShowFontSizePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showFontSizePicker]);
 
   // 图片缩放操作
   const handleImageResize = (percent: number) => {
@@ -780,17 +664,6 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
     setShowImageSizeDialog(false);
   };
 
-  const handleInsertTable = (rows: number, cols: number) => {
-    setShowTableGrid(false);
-    setTableGridHover({ rows: 0, cols: 0 });
-    if (!editor) return;
-    editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
-  };
-
-  // 表格操作辅助函数
-  const tableAction = useCallback((action: () => boolean | undefined) => {
-    try { action(); } catch { /* ignore */ }
-  }, []);
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
@@ -902,6 +775,55 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
                   清除颜色
                 </button>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Font Size */}
+        <div className="relative" data-font-size-picker>
+          <button
+            onClick={() => setShowFontSizePicker(!showFontSizePicker)}
+            className={`p-2 rounded hover:bg-gray-200 flex items-center gap-1 ${
+              showFontSizePicker ? 'bg-blue-100' : ''
+            }`}
+            title="字号"
+          >
+            <FaTextHeight />
+            <span className="text-xs">{currentFontSize || '字号'}</span>
+          </button>
+          {showFontSizePicker && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-30 min-w-[120px]">
+              {[
+                { label: '12px', value: '12px' },
+                { label: '14px', value: '14px' },
+                { label: '16px', value: '16px' },
+                { label: '18px', value: '18px' },
+                { label: '20px', value: '20px' },
+                { label: '24px', value: '24px' },
+                { label: '28px', value: '28px' },
+                { label: '32px', value: '32px' },
+                { label: '36px', value: '36px' },
+                { label: '清除', value: '' },
+              ].map((size) => (
+                <button
+                  key={size.value || 'clear'}
+                  onMouseDown={(e) => { e.preventDefault(); }}
+                  onClick={() => {
+                    if (size.value) {
+                      editor.chain().focus().setFontSize(size.value).run();
+                      setCurrentFontSize(size.value);
+                    } else {
+                      editor.chain().focus().unsetFontSize().run();
+                      setCurrentFontSize('');
+                    }
+                    setShowFontSizePicker(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-gray-100"
+                  style={size.value ? { fontSize: size.value } : { color: '#ef4444' }}
+                >
+                  {size.label}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -1173,93 +1095,7 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
         <MenuBar />
 
         {/* 表格上下文工具栏 */}
-        {isInTable && editor && (
-        <div className="bg-blue-50 border-b border-blue-200 px-2 py-1.5 flex flex-wrap items-center gap-1">
-          <span className="text-xs text-blue-600 font-medium mr-2">表格操作</span>
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().addColumnBefore().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-gray-700"
-              title="在左侧插入列"
-            >
-              ← 插入列
-            </button>
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().addColumnAfter().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-gray-700"
-              title="在右侧插入列"
-            >
-              插入列 →
-            </button>
-          </div>
-          <div className="w-px h-4 bg-blue-200 mx-1" />
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().addRowBefore().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-gray-700"
-              title="在上方插入行"
-            >
-              ↑ 插入行
-            </button>
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().addRowAfter().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-gray-700"
-              title="在下方插入行"
-            >
-              插入行 ↓
-            </button>
-          </div>
-          <div className="w-px h-4 bg-blue-200 mx-1" />
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().deleteColumn().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-red-600"
-              title="删除当前列"
-            >
-              删除列
-            </button>
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().deleteRow().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-red-600"
-              title="删除当前行"
-            >
-              删除行
-            </button>
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().deleteTable().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-red-600"
-              title="删除整个表格"
-            >
-              删除表格
-            </button>
-          </div>
-          <div className="w-px h-4 bg-blue-200 mx-1" />
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().mergeCells().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-gray-700"
-              title="合并选中的单元格"
-            >
-              合并单元格
-            </button>
-            <button
-              onClick={() => tableAction(() => editor.chain().focus().splitCell().run())}
-              className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-gray-700"
-              title="拆分当前单元格"
-            >
-              拆分单元格
-            </button>
-          </div>
-          <div className="w-px h-4 bg-blue-200 mx-1" />
-          <button
-            onClick={() => tableAction(() => editor.chain().focus().toggleHeaderRow().run())}
-            className="px-2 py-1 text-xs rounded hover:bg-blue-100 text-gray-700"
-            title="切换首行是否为表头"
-          >
-            切换表头
-          </button>
-        </div>
-      )}
+        
 
         {/* 图片编辑工具栏 */}
         {showImageToolbar && selectedImagePos !== null && (
@@ -1659,19 +1495,7 @@ export default function RichTextEditor({ content, onChange, onImageUpload, showP
       )}
 
       {/* Word导入进度提示 */}
-      {wordImporting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">正在导入Word文档</p>
-                <p className="text-xs text-gray-500 mt-1">{wordImportProgress}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       <style jsx global>{`
         .rich-text-editor-content .ProseMirror {

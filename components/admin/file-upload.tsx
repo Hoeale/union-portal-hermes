@@ -14,7 +14,7 @@ interface FileUploadProps {
 
 // 允许的文件扩展名
 const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.jpg', '.jpeg', '.png'];
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_SIZE = 100 * 1024 * 1024; // 100MB
 
 export default function FileUpload({ uploadType, value, fileName, onChange }: FileUploadProps) {
   const csrfToken = useCsrfToken();
@@ -35,7 +35,7 @@ export default function FileUpload({ uploadType, value, fileName, onChange }: Fi
 
     // 验证文件大小
     if (file.size > MAX_SIZE) {
-      setError('文件大小不能超过 10MB');
+      setError('文件大小不能超过 100MB');
       return;
     }
 
@@ -100,7 +100,7 @@ export default function FileUpload({ uploadType, value, fileName, onChange }: Fi
             className="hidden"
           />
           <span className="text-sm text-gray-500">
-            支持 {ALLOWED_EXTENSIONS.join(' / ')}，最大 10MB
+            支持 {ALLOWED_EXTENSIONS.join(' / ')}，最大 100MB
           </span>
         </div>
       ) : (

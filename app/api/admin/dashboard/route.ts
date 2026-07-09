@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     // 内容统计
     const [newsCount, policyCount, videoCount, serviceCount] = await Promise.all([
-      prisma.news.count({ where: { status: 'published' } }),
+      prisma.news.count(),
       prisma.policy.count({ where: { status: 'published' } }),
       prisma.video.count({ where: { isActive: true } }),
       prisma.siteInfo.count(),

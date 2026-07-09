@@ -356,16 +356,6 @@ function SearchContent() {
                   新闻中心
                 </button>
                 <button
-                  onClick={() => handleFilterChange('policy')}
-                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                    filterType === 'policy'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-[hsl(var(--background))] border border-[hsl(var(--card-border))] hover:border-green-400'
-                  }`}
-                >
-                  政策文件
-                </button>
-                <button
                   onClick={() => handleFilterChange('service')}
                   className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                     filterType === 'service'
@@ -374,6 +364,16 @@ function SearchContent() {
                   }`}
                 >
                   办事服务
+                </button>
+                <button
+                  onClick={() => handleFilterChange('policy')}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    filterType === 'policy'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-[hsl(var(--background))] border border-[hsl(var(--card-border))] hover:border-green-400'
+                  }`}
+                >
+                  政策文件
                 </button>
               </div>
             </div>

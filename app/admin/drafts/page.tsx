@@ -297,10 +297,11 @@ export default function AdminDraftsPage() {
                         </button>
                         <button
                           onClick={() => setPublishConfirmId(draft.id)}
-                          className="p-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                          className="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1.5 font-medium text-sm"
                           title="发布"
                         >
                           <FontAwesomeIcon icon={faPaperPlane} className="text-sm" />
+                          <span>发布</span>
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(draft.id)}
@@ -474,9 +475,15 @@ export default function AdminDraftsPage() {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
             <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setPublishConfirmId(null)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">确认发布</h3>
-              <p className="text-sm text-gray-600 mb-6">发布后草稿将移入对应的管理列表，确定要发布吗？</p>
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <FontAwesomeIcon icon={faPaperPlane} className="text-xl text-orange-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">确认发布此草稿？</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">发布后，该内容将直接出现在前台对应页面，请确认内容无误。</p>
+              <p className="text-sm text-gray-600 mb-6">草稿将从此列表移除，并进入对应的管理列表。</p>
               <div className="flex gap-3 justify-end">
                 <button onClick={() => setPublishConfirmId(null)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
                 <button onClick={handlePublish} disabled={saving} className="px-4 py-2 text-sm bg-[#b71c1c] text-white rounded-lg hover:bg-[#8b0000] disabled:opacity-50 flex items-center gap-2">

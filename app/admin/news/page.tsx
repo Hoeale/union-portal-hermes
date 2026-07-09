@@ -95,8 +95,12 @@ export default function AdminNewsPage() {
       {/* Stats */}
       <NewsStats
         total={newsManager.total}
+        totalAllNews={newsManager.totalAllNews}
+        totalDrafts={newsManager.totalDrafts}
+        totalScheduled={newsManager.totalScheduled}
         totalCarousel={newsManager.totalCarousel}
         categories={newsManager.categories}
+        statusFilter={newsManager.statusFilter}
         onCategoryClick={(categoryName) => {
           newsManager.setStatusFilter('all');
           newsManager.setCategoryFilter(categoryName);

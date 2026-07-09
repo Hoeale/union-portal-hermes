@@ -144,7 +144,6 @@ export default async function PolicyDetailPage({
                       key={index}
                       fileUrl={att.url}
                       fileName={att.fileName}
-                      label={att.fileName}
                       variant="outline"
                     />
                   ))}
