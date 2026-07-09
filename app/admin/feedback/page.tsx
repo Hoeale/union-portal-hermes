@@ -106,7 +106,7 @@ export default function AdminFeedbackPage() {
       const params = new URLSearchParams({
         filter,
         page: page.toString(),
-        pageSize: '20',
+        pageSize: '10',
       });
       if (statusFilter !== 'all') {
         params.set('status', statusFilter);
