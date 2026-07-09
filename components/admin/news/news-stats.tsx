@@ -8,10 +8,7 @@ interface NewsStatsProps {
   totalCarousel: number;
   categories: NewsCategory[];
   statusFilter: NewsStatusFilter;
-  onCategoryClick: (categoryName: string) => void;
   onCarouselClick: () => void;
-  onStatusFilterChange: (status: NewsStatusFilter) => void;
-  onPageChange: (page: number) => void;
 }
 
 export default function NewsStats({
@@ -20,16 +17,11 @@ export default function NewsStats({
   totalCarousel,
   categories,
   statusFilter,
-  onCategoryClick,
   onCarouselClick,
-  onStatusFilterChange,
-  onPageChange,
 }: NewsStatsProps) {
-  // 根据当前筛选状态决定显示哪个数字
   const displayTotal = () => {
     switch (statusFilter) {
       case 'pending':
-        return total;
       case 'published':
         return total;
       case 'all':
@@ -40,9 +32,12 @@ export default function NewsStats({
 
   const statusLabel = () => {
     switch (statusFilter) {
-      case 'pending': return '待发布';
-      case 'published': return '已发布';
-      default: return '总数';
+      case 'pending':
+        return '待发布';
+      case 'published':
+        return '已发布';
+      default:
+        return '总数';
     }
   };
 
@@ -55,13 +50,7 @@ export default function NewsStats({
       {categories.map((cat) => (
         <div
           key={cat.id}
-          className="bg-white rounded-xl shadow-sm p-4 border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => {
-            onStatusFilterChange('all');
-            onCategoryClick(cat.name);
-            onPageChange(1);
-          }}
-          title={`点击查看${cat.name}列表`}
+          className="bg-white rounded-xl shadow-sm p-4 border border-gray-200"
         >
           <div className="text-3xl font-bold" style={{ color: cat.color || '#666' }}>
             {cat.newsCount || 0}

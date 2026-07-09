@@ -77,15 +77,16 @@ export default function AdminNewsPage() {
       <NewsFilters
         searchTerm={newsManager.searchTerm}
         categoryFilter={newsManager.categoryFilter}
+        carouselOnly={newsManager.carouselOnly}
         categories={newsManager.categories}
         onSearchTermChange={newsManager.setSearchTerm}
         onSearch={newsManager.handleSearch}
-        onClear={() => {
-          newsManager.setSearchTerm('');
-          newsManager.setCurrentPage(1);
-          newsManager.fetchNews();
-        }}
+        onClear={newsManager.handleClearFilters}
         onFilterChange={newsManager.handleFilterChange}
+        onCarouselFilterChange={(enabled) => {
+          newsManager.setCarouselOnly(enabled);
+          newsManager.setCurrentPage(1);
+        }}
         onCategoryModalOpen={() => newsManager.setCategoryModalOpen(true)}
       />
 
@@ -96,14 +97,7 @@ export default function AdminNewsPage() {
         totalCarousel={newsManager.totalCarousel}
         categories={newsManager.categories}
         statusFilter={newsManager.statusFilter}
-        onCategoryClick={(categoryName) => {
-          newsManager.setStatusFilter('all');
-          newsManager.setCategoryFilter(categoryName);
-          newsManager.setCurrentPage(1);
-        }}
         onCarouselClick={newsManager.openCarouselModal}
-        onStatusFilterChange={newsManager.setStatusFilter}
-        onPageChange={newsManager.setCurrentPage}
       />
 
       {/* Content Area */}

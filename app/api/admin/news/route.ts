@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     const publishStatus = searchParams.get('publishStatus');
+    const isCarousel = searchParams.get('is_carousel');
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
 
@@ -70,6 +71,11 @@ export async function GET(request: NextRequest) {
     }
     if (status) {
       where.status = status;
+    }
+    if (isCarousel === 'true') {
+      where.isCarousel = true;
+    } else if (isCarousel === 'false') {
+      where.isCarousel = false;
     }
     // 支持按 publishStatus 过滤（scheduled = 定时发布）
     if (publishStatus) {

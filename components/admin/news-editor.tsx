@@ -83,7 +83,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
     content: initialData?.content || '',
     image_url: initialData?.image_url || '',
     image_source_type: initialData?.image_source_type || ('local' as 'local' | 'external'),
-    is_carousel: initialData?.is_carousel ?? true,
+    is_carousel: initialData?.is_carousel ?? false,
     carousel_order: initialData?.carousel_order || 0,
   });
 
@@ -100,6 +100,9 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
     setTimeout(() => setMessage(null), 3000);
   };
 
+  const handleCarouselChange = (checked: boolean) => {
+    setFormData((prev) => ({ ...prev, is_carousel: checked }));
+  };
   const getHeaders = () => ({
     'Content-Type': 'application/json',
     'x-csrf-token': csrfToken,
@@ -128,14 +131,30 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
     return imgMatch ? imgMatch[1] : null;
   };
 
+  const getPlainTextFromContent = (content: string): string => {
+    return content
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .trim();
+  };
+
   // Submit (publish or update)
   const handleSubmit = async () => {
     if (!formData.title.trim()) {
       showMessage('error', '请输入新闻标题');
       return;
     }
-    if (!formData.content.trim()) {
+    if (!getPlainTextFromContent(formData.content)) {
       showMessage('error', '请输入新闻内容');
+      return;
+    }
+    if (!formData.category.trim()) {
+      showMessage('error', '请选择新闻分类');
       return;
     }
     if (!csrfToken) {
@@ -148,17 +167,19 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
       const url = '/api/admin/news';
       const method = mode === 'edit' ? 'PUT' : 'POST';
 
-      // 如果没有设置封面图，自动从内容中提取第一张图片
       let imageUrl = formData.image_url;
-      if (!imageUrl && formData.content) {
-        const extractedImage = extractFirstImageFromContent(formData.content);
-        if (extractedImage) {
-          // 提示用户是否采用第一张图片作为封面
-          const confirmed = window.confirm('当前无封面照片，是否采用新闻第一张照片为封面？');
-          if (confirmed) {
-            imageUrl = extractedImage;
-          }
+      const extractedImage = !imageUrl ? extractFirstImageFromContent(formData.content) : null;
+      if (!imageUrl && extractedImage) {
+        const confirmed = window.confirm('当前未设置封面图片，是否采用正文第一张图片作为封面？');
+        if (confirmed) {
+          imageUrl = extractedImage;
         }
+      }
+
+      if (formData.is_carousel && !imageUrl) {
+        showMessage('error', '设为轮播图需要先设置封面图片');
+        setSubmitting(false);
+        return;
       }
 
       // 保存后统一进入待发布状态，由列表页手动发布。
@@ -204,7 +225,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
   };
 
   const isPending = initialData?.status === 'pending';
-  const wordCount = formData.content.replace(/<[^>]*>/g, '').length;
+  const titleWordCount = formData.title.trim().length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -281,7 +302,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                 placeholder="请输入新闻标题..."
               />
               <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-                <span className="text-xs text-gray-400">字数: {wordCount}</span>
+                <span className="text-xs text-gray-400">字数: {titleWordCount}</span>
                 {formData.title && (
                   <span className="text-xs text-green-500">✓ 标题已填写</span>
                 )}
@@ -328,6 +349,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                 <SettingsPanel
                   formData={formData}
                   setFormData={setFormData}
+                  onCarouselChange={handleCarouselChange}
                   handleImageUpload={handleImageUpload}
                   isPending={isPending}
                 />
@@ -417,7 +439,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
               {/* Source toggle */}
               <div className="flex gap-4 mb-3">
                 <button
-                  onClick={() => setFormData((prev) => ({ ...prev, image_source_type: 'local', image_url: '' }))}
+                  onClick={() => setFormData((prev) => ({ ...prev, image_source_type: 'local', image_url: '', is_carousel: false }))}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                     formData.image_source_type === 'local'
                       ? 'bg-[#b71c1c] text-white'
@@ -428,7 +450,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                   本地上传
                 </button>
                 <button
-                  onClick={() => setFormData((prev) => ({ ...prev, image_source_type: 'external', image_url: '' }))}
+                  onClick={() => setFormData((prev) => ({ ...prev, image_source_type: 'external', image_url: '', is_carousel: false }))}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                     formData.image_source_type === 'external'
                       ? 'bg-[#b71c1c] text-white'
@@ -482,7 +504,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                     {formData.image_source_type === 'local' ? '本地' : '外链'}
                   </span>
                   <button
-                    onClick={() => setFormData((prev) => ({ ...prev, image_url: '' }))}
+                    onClick={() => setFormData((prev) => ({ ...prev, image_url: '', is_carousel: false }))}
                     className="absolute bottom-2 right-2 px-2 py-0.5 text-xs bg-red-600 text-white rounded hover:bg-red-700"
                   >
                     移除
@@ -501,9 +523,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                 <input
                   type="checkbox"
                   checked={formData.is_carousel}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, is_carousel: e.target.checked }))
-                  }
+                  onChange={(e) => handleCarouselChange(e.target.checked)}
                   disabled={isPending}
                   className="rounded border-gray-300 text-[#b71c1c] focus:ring-[#b71c1c] h-4 w-4"
                 />
@@ -551,11 +571,13 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
 function SettingsPanel({
   formData,
   setFormData,
+  onCarouselChange,
   handleImageUpload,
   isPending,
 }: {
   formData: NewsFormData;
   setFormData: Dispatch<SetStateAction<NewsFormData>>;
+  onCarouselChange: (checked: boolean) => void;
   handleImageUpload: (file: File) => Promise<string>;
   isPending: boolean;
 }) {
@@ -570,7 +592,7 @@ function SettingsPanel({
               name="settings_image_source"
               value="local"
               checked={formData.image_source_type === 'local'}
-              onChange={() => setFormData((prev) => ({ ...prev, image_source_type: 'local', image_url: '' }))}
+              onChange={() => setFormData((prev) => ({ ...prev, image_source_type: 'local', image_url: '', is_carousel: false }))}
               className="w-4 h-4 text-[#b71c1c] focus:ring-[#b71c1c]"
             />
             <span className="text-sm text-gray-700">本地上传</span>
@@ -581,7 +603,7 @@ function SettingsPanel({
               name="settings_image_source"
               value="external"
               checked={formData.image_source_type === 'external'}
-              onChange={() => setFormData((prev) => ({ ...prev, image_source_type: 'external', image_url: '' }))}
+              onChange={() => setFormData((prev) => ({ ...prev, image_source_type: 'external', image_url: '', is_carousel: false }))}
               className="w-4 h-4 text-[#b71c1c] focus:ring-[#b71c1c]"
             />
             <span className="text-sm text-gray-700">外部链接</span>
@@ -635,7 +657,7 @@ function SettingsPanel({
           <input
             type="checkbox"
             checked={formData.is_carousel}
-            onChange={(e) => setFormData((prev) => ({ ...prev, is_carousel: e.target.checked }))}
+            onChange={(e) => onCarouselChange(e.target.checked)}
             disabled={isPending}
             className="rounded border-gray-300 text-[#b71c1c] focus:ring-[#b71c1c] h-5 w-5"
           />

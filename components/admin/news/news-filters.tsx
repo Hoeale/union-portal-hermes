@@ -5,22 +5,26 @@ import { NewsCategory } from '@/hooks/useNewsManagement';
 interface NewsFiltersProps {
   searchTerm: string;
   categoryFilter: string;
+  carouselOnly: boolean;
   categories: NewsCategory[];
   onSearchTermChange: (term: string) => void;
   onSearch: (e: React.FormEvent) => void;
   onClear: () => void;
   onFilterChange: (category: string) => void;
+  onCarouselFilterChange: (enabled: boolean) => void;
   onCategoryModalOpen: () => void;
 }
 
 export default function NewsFilters({
   searchTerm,
   categoryFilter,
+  carouselOnly,
   categories,
   onSearchTermChange,
   onSearch,
   onClear,
   onFilterChange,
+  onCarouselFilterChange,
   onCategoryModalOpen,
 }: NewsFiltersProps) {
   return (
@@ -51,6 +55,20 @@ export default function NewsFilters({
             </button>
           )}
         </form>
+
+        {/* Carousel Filter */}
+        <button
+          type="button"
+          onClick={() => onCarouselFilterChange(!carouselOnly)}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-all ${
+            carouselOnly
+              ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-sm'
+              : 'bg-white text-gray-700 border-gray-300 hover:border-amber-300 hover:text-amber-700'
+          }`}
+        >
+          <span className={`h-2.5 w-2.5 rounded-full ${carouselOnly ? 'bg-amber-500' : 'bg-gray-300'}`} />
+          轮播图
+        </button>
         
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2">

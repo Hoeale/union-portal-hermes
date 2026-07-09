@@ -54,6 +54,7 @@ export function useNewsManagement() {
   const [categories, setCategories] = useState<NewsCategory[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<NewsStatusFilter>('all');
+  const [carouselOnly, setCarouselOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [carouselModalOpen, setCarouselModalOpen] = useState(false);
   const [carouselNews, setCarouselNews] = useState<News[]>([]);
@@ -66,6 +67,7 @@ export function useNewsManagement() {
 
   // Search and pagination
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchVersion, setSearchVersion] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -210,17 +212,25 @@ export function useNewsManagement() {
       if (statusFilter === 'pending' || statusFilter === 'published') {
         params.append('status', statusFilter);
       }
+      if (carouselOnly) {
+        params.append('is_carousel', 'true');
+      }
 
       const response = await fetch(`/api/admin/news?${params}`);
       const result = await response.json();
 
       if (result.success) {
+        const visibleNews = carouselOnly
+          ? result.data.filter((item: News) => item.is_carousel && item.status === 'published')
+          : result.data;
+        const visibleTotal = carouselOnly ? visibleNews.length : result.total;
+
         setNews(result.data);
-        setFilteredNews(result.data);
-        setTotalPages(result.totalPages);
-        setTotal(result.total);
+        setFilteredNews(visibleNews);
+        setTotalPages(carouselOnly ? Math.max(1, Math.ceil(visibleTotal / pageSize)) : result.totalPages);
+        setTotal(visibleTotal);
         // 当无筛选条件时，更新总数（用于统计卡片始终显示真实总数）
-        if (categoryFilter === 'all' && !searchTerm && statusFilter === 'all') {
+        if (categoryFilter === 'all' && !searchTerm && statusFilter === 'all' && !carouselOnly) {
           setTotalAllNews(result.total);
         }
       }
@@ -316,7 +326,14 @@ export function useNewsManagement() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchNews();
+    setSearchVersion((prev) => prev + 1);
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setCarouselOnly(false);
+    setCurrentPage(1);
+    setSearchVersion((prev) => prev + 1);
   };
 
   // Handle page change
@@ -354,7 +371,7 @@ export function useNewsManagement() {
   useEffect(() => {
     fetchNews();
     fetchStats();
-  }, [statusFilter, currentPage, categoryFilter]);
+  }, [statusFilter, currentPage, categoryFilter, carouselOnly, searchVersion]);
 
   useEffect(() => {
     fetchCategories();
@@ -366,7 +383,7 @@ export function useNewsManagement() {
 
   useEffect(() => {
     setSelectedIds([]);
-  }, [currentPage, categoryFilter, statusFilter]);
+  }, [currentPage, categoryFilter, statusFilter, carouselOnly]);
 
   // 打开轮播排序弹窗
   const openCarouselModal = async () => {
@@ -600,6 +617,7 @@ export function useNewsManagement() {
     categories,
     categoryFilter,
     statusFilter,
+    carouselOnly,
     loading,
     carouselModalOpen,
     carouselNews,
@@ -621,6 +639,7 @@ export function useNewsManagement() {
     // Setters
     setCategoryFilter,
     setStatusFilter,
+    setCarouselOnly,
     setCarouselModalOpen,
     setCarouselNews,
     setDeleteConfirm,
@@ -646,6 +665,7 @@ export function useNewsManagement() {
     autoSortCarouselNews,
     updateCarouselOrder,
     handleSearch,
+    handleClearFilters,
     handlePageChange,
     handleFilterChange,
     handleSelectAll,
