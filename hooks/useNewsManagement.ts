@@ -40,17 +40,17 @@ export interface NewsCategory {
   newsCount?: number;
 }
 
+export type NewsStatusFilter = 'all' | 'pending' | 'published';
+
 export function useNewsManagement() {
   const router = useRouter();
   const csrfToken = useCsrfToken();
 
   const [news, setNews] = useState<News[]>([]);
   const [filteredNews, setFilteredNews] = useState<News[]>([]);
-  const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [scheduledNews, setScheduledNews] = useState<News[]>([]);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'draft' | 'scheduled'>('all');
+  const [statusFilter, setStatusFilter] = useState<NewsStatusFilter>('all');
   const [loading, setLoading] = useState(true);
   const [carouselModalOpen, setCarouselModalOpen] = useState(false);
   const [carouselNews, setCarouselNews] = useState<News[]>([]);
@@ -68,8 +68,6 @@ export function useNewsManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalAllNews, setTotalAllNews] = useState(0);
-  const [totalDrafts, setTotalDrafts] = useState(0);
-  const [totalScheduled, setTotalScheduled] = useState(0);
 
   // 批量选择
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -177,8 +175,8 @@ export function useNewsManagement() {
       if (searchTerm) {
         params.append('search', searchTerm);
       }
-      if (statusFilter === 'pending') {
-        params.append('status', 'pending');
+      if (statusFilter === 'pending' || statusFilter === 'published') {
+        params.append('status', statusFilter);
       }
 
       const response = await fetch(`/api/admin/news?${params}`);
@@ -196,39 +194,6 @@ export function useNewsManagement() {
       }
     } catch (error) {
       logger.error('Failed to fetch news:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch drafts
-  const fetchDrafts = async () => {
-    try {
-      const response = await fetch('/api/admin/drafts?type=news&page=1&pageSize=100');
-      if (response.ok) {
-        const data = await response.json();
-        setDrafts(data.data || []);
-        setTotalDrafts((data.data || []).length);
-      }
-    } catch (error) {
-      logger.error('Failed to fetch drafts:', error);
-    }
-  };
-
-  // Fetch scheduled news
-  const fetchScheduledNews = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin/news/auto-publish');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setScheduledNews(result.data || []);
-          setTotalScheduled((result.data || []).length);
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to fetch scheduled news:', error);
     } finally {
       setLoading(false);
     }
@@ -360,13 +325,7 @@ export function useNewsManagement() {
 
   // Effects
   useEffect(() => {
-    if (statusFilter === 'draft') {
-      fetchDrafts();
-    } else if (statusFilter === 'scheduled') {
-      fetchScheduledNews();
-    } else {
-      fetchNews();
-    }
+    fetchNews();
   }, [statusFilter, currentPage, categoryFilter]);
 
   useEffect(() => {
@@ -378,56 +337,6 @@ export function useNewsManagement() {
     setSelectedIds([]);
   }, [currentPage, categoryFilter, statusFilter]);
 
-  // 草稿发布
-  const handlePublishDraft = async (id: string) => {
-    if (!confirm('确定要发布这个草稿吗？发布后状态将变为待发布。')) return;
-
-    try {
-      const response = await fetch('/api/admin/drafts/publish/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-
-      const result = await response.json();
-      if (response.ok) {
-        fetchDrafts();
-        fetchNews();
-        alert('发布成功，草稿已转入待发布状态');
-      } else {
-        alert(result.error || '发布失败');
-      }
-    } catch (error) {
-      logger.error('Failed to publish draft:', error);
-      alert('发布失败');
-    }
-  };
-
-  // 草稿预览
-  const handlePreviewDraft = (id: string) => {
-    window.open(`/preview/draft/${id}`, '_blank');
-  };
-
-  // 草稿删除
-  const handleDeleteDraft = async (id: string) => {
-    if (!confirm('确定要删除这个草稿吗？')) return;
-
-    try {
-      const response = await fetch(`/api/admin/drafts?id=${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        fetchDrafts();
-      } else {
-        alert('删除失败');
-      }
-    } catch (error) {
-      logger.error('Failed to delete draft:', error);
-      alert('删除失败');
-    }
-  };
-
   // 打开轮播排序弹窗
   const openCarouselModal = async () => {
     try {
@@ -437,13 +346,13 @@ export function useNewsManagement() {
         const carouselItems = result.data
           .filter((n: News) => n.is_carousel && n.status === 'published')
           .sort((a: News, b: News) => (a.carousel_order || 0) - (b.carousel_order || 0));
-        
+
         let finalCarouselItems = carouselItems;
-        
+
         if (carouselItems.length > 5) {
           const itemsToKeep = carouselItems.slice(0, 5);
           const itemsToDisable = carouselItems.slice(5);
-          
+
           // 批量禁用超出限制的轮播图 - 优化 N+1 查询
           await fetch('/api/admin/news/batch-action/', {
             method: 'POST',
@@ -453,16 +362,16 @@ export function useNewsManagement() {
               ids: itemsToDisable.map((item: News) => item.id),
             }),
           });
-          
+
           finalCarouselItems = itemsToKeep;
         }
-        
+
         // 批量更新轮播排序 - 优化 N+1 查询
         const sortedItems = finalCarouselItems.slice(0, 5).map((item: News, index: number) => ({
           id: item.id,
           carouselOrder: index,
         }));
-        
+
         if (sortedItems.length > 0) {
           await fetch('/api/admin/news/batch-carousel-order/', {
             method: 'POST',
@@ -470,7 +379,7 @@ export function useNewsManagement() {
             body: JSON.stringify({ items: sortedItems }),
           });
         }
-        
+
         // 重新获取更新后的数据
         const updatedResponse = await fetch('/api/admin/news?page=1&pageSize=100');
         const updatedResult = await updatedResponse.json();
@@ -480,7 +389,7 @@ export function useNewsManagement() {
             .sort((a: News, b: News) => (a.carousel_order || 0) - (b.carousel_order || 0));
           setCarouselNews(updatedCarouselItems.slice(0, 5));
         }
-        
+
         setCarouselModalOpen(true);
       }
     } catch (error) {
@@ -493,7 +402,7 @@ export function useNewsManagement() {
     const sorted = [...carouselNews]
       .sort((a, b) => (a.carousel_order || 0) - (b.carousel_order || 0))
       .map((item, index) => ({ id: item.id, carouselOrder: index }));
-    
+
     // 批量更新排序 - 优化 N+1 查询
     try {
       await fetch('/api/admin/news/batch-carousel-order/', {
@@ -501,7 +410,7 @@ export function useNewsManagement() {
         headers: getHeaders(),
         body: JSON.stringify({ items: sorted }),
       });
-      
+
       // 更新本地状态
       const updatedCarouselNews = carouselNews
         .sort((a, b) => (a.carousel_order || 0) - (b.carousel_order || 0))
@@ -521,7 +430,7 @@ export function useNewsManagement() {
         id: item.id,
         carouselOrder: item.id === id ? order : item.carousel_order,
       }));
-      
+
       // 批量更新 - 优化 N+1 查询
       const response = await fetch('/api/admin/news/batch-carousel-order', {
         method: 'POST',
@@ -653,54 +562,10 @@ export function useNewsManagement() {
     }
   };
 
-  // 立即发布定时新闻
-  const handlePublishScheduled = async (id: string) => {
-    if (!csrfToken) {
-      alert('安全令牌未获取，请刷新页面重试');
-      return;
-    }
-    await fetch('/api/admin/news/', {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ id, status: 'published', publish_status: 'immediate' }),
-    });
-    fetchScheduledNews();
-  };
-
-  // 取消定时发布
-  const handleCancelScheduled = async (id: string) => {
-    if (!confirm('确定要取消定时发布吗？')) return;
-    if (!csrfToken) {
-      alert('安全令牌未获取，请刷新页面重试');
-      return;
-    }
-    await fetch('/api/admin/news/', {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ id, publish_status: 'immediate', scheduled_publish_at: null }),
-    });
-    fetchScheduledNews();
-  };
-
-  // 立即执行到期发布
-  const handleExecuteScheduled = async () => {
-    if (!confirm('确定要立即发布所有到期的定时新闻吗？')) return;
-    const res = await fetch('/api/admin/news/auto-publish/', { method: 'POST' });
-    const result = await res.json();
-    if (result.success) {
-      alert(`已发布 ${result.published} 条新闻`);
-      fetchScheduledNews();
-    } else {
-      alert('操作失败');
-    }
-  };
-
   return {
     // State
     news,
     filteredNews,
-    drafts,
-    scheduledNews,
     categories,
     categoryFilter,
     statusFilter,
@@ -717,8 +582,6 @@ export function useNewsManagement() {
     totalPages,
     total,
     totalAllNews,
-    totalDrafts,
-    totalScheduled,
     selectedIds,
     totalCarousel,
     totalByCategory,
@@ -740,22 +603,14 @@ export function useNewsManagement() {
     // Actions
     fetchNews,
     fetchCategories,
-    fetchDrafts,
-    fetchScheduledNews,
     fetchStats,
     handleCreateCategory,
     handleDeleteCategory,
     handleDelete,
     handlePreview,
     handlePublish,
-    handlePublishDraft,
-    handlePreviewDraft,
-    handleDeleteDraft,
     handleUnpublish,
     handleToggleNotice,
-    handlePublishScheduled,
-    handleCancelScheduled,
-    handleExecuteScheduled,
     openCarouselModal,
     autoSortCarouselNews,
     updateCarouselOrder,

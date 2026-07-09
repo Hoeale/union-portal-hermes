@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import RichTextEditor from '@/components/admin/rich-text-editor';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft, faSave, faPaperPlane, faFileAlt, faSpinner,
-  faEye, faImage, faLink, faInfoCircle, faStar, faCheckCircle, faCalendarAlt
+  faArrowLeft, faSave, faSpinner,
+  faEye, faImage, faLink, faInfoCircle, faStar
 } from '@fortawesome/free-solid-svg-icons';
 
 // 预览功能：将数据保存到 sessionStorage 并打开预览窗口
@@ -14,7 +14,7 @@ const openPreview = (data: { title: string; category: string; content: string; i
   // 检查是否有有效内容（标题或内容至少有一个）
   const hasTitle = data.title?.trim();
   const hasContent = data.content?.trim() && data.content !== '<p></p>' && data.content !== '';
-  
+
   if (!hasTitle && !hasContent) {
     alert('请先输入标题或内容后再预览');
     return;
@@ -50,18 +50,10 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
   const router = useRouter();
   const [csrfToken, setCsrfToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [savingDraft, setSavingDraft] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'content' | 'settings'>('content');
   const [categories, setCategories] = useState<NewsCategory[]>([]);
 
-  // 自动保存相关
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<string>('');
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const draftIdRef = useRef<string | null>(null); // 服务器端草稿ID
-  const hasChangesRef = useRef(false); // 是否有未保存的更改
-  const isInitialMountRef = useRef(true); // 是否是初始挂载（避免初始化时触发自动保存）
 
   // 获取新闻分类列表
   useEffect(() => {
@@ -83,154 +75,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
     image_source_type: initialData?.image_source_type || ('local' as 'local' | 'external'),
     is_carousel: initialData?.is_carousel ?? true,
     carousel_order: initialData?.carousel_order || 0,
-    // 定时发布相关
-    publish_type: 'immediate' as 'immediate' | 'scheduled',
-    scheduled_date: '',
-    scheduled_time: '',
-    // 发布日期（可手动修改）
-    published_date: initialData?.publishedAt ? new Date(initialData.publishedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
   });
-
-  // localStorage key（区分新建和编辑）
-  const storageKey = mode === 'edit' && newsId
-    ? `news-draft-edit-${newsId}`
-    : 'news-draft-create';
-
-  // 本地缓存：每次输入变化时保存到 localStorage
-  const saveToLocal = useCallback((data: typeof formData) => {
-    try {
-      const draftData = {
-        ...data,
-        mode,
-        newsId,
-        savedAt: new Date().toISOString(),
-        draftId: draftIdRef.current,
-      };
-      localStorage.setItem(storageKey, JSON.stringify(draftData));
-    } catch (e) {
-      console.error('Failed to save to localStorage:', e);
-    }
-  }, [storageKey, mode, newsId]);
-
-  // 服务器端自动保存草稿
-  const autoSaveToServer = useCallback(async (data: typeof formData) => {
-    if (!data.title.trim() && !data.content.trim()) {
-      return; // 标题和内容都为空时不保存
-    }
-
-    setAutoSaveStatus('saving');
-    try {
-      const url = '/api/admin/drafts';
-      const method = draftIdRef.current ? 'PUT' : 'POST';
-      const body = draftIdRef.current
-        ? {
-            id: draftIdRef.current,
-            title: data.title,
-            category: data.category,
-            content: data.content,
-            imageUrl: data.image_url || null,
-          }
-        : {
-            type: 'news',
-            title: data.title || '(未命名新闻)',
-            category: data.category,
-            content: data.content,
-            imageUrl: data.image_url || null,
-          };
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const result = await response.json();
-      if (result.success && result.data) {
-        // 记录草稿ID，下次更新时使用
-        if (!draftIdRef.current) {
-          draftIdRef.current = result.data.id;
-        }
-        setAutoSaveStatus('saved');
-        const now = new Date();
-        setLastAutoSaveTime(
-          `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        );
-        hasChangesRef.current = false;
-      } else {
-        setAutoSaveStatus('error');
-      }
-    } catch (error: unknown) {
-      console.error('Auto-save failed:', error);
-      setAutoSaveStatus('error');
-    }
-  }, []);
-
-  // 监听 formData 变化，触发自动保存
-  useEffect(() => {
-    // 跳过初始挂载
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      return;
-    }
-
-    // 标记有更改
-    hasChangesRef.current = true;
-
-    // 保存到本地缓存
-    saveToLocal(formData);
-
-    // 清除之前的定时器
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-    }
-
-    // 设置新的定时器：停止输入30秒后自动保存到服务器
-    autoSaveTimerRef.current = setTimeout(() => {
-      if (hasChangesRef.current) {
-        autoSaveToServer(formData);
-      }
-    }, 30000); // 30秒防抖
-
-    // 清理函数
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [formData, saveToLocal, autoSaveToServer]);
-
-  // 页面关闭前保存（使用 beforeunload）
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (hasChangesRef.current && (formData.title.trim() || formData.content.trim())) {
-        // 使用 sendBeacon 确保请求在页面卸载时发送
-        const data = {
-          type: 'news',
-          title: formData.title || '(未命名新闻)',
-          category: formData.category,
-          content: formData.content,
-          imageUrl: formData.image_url || null,
-        };
-        // 如果有草稿ID，使用 PUT 更新
-        if (draftIdRef.current) {
-          (data as any).id = draftIdRef.current;
-        }
-        navigator.sendBeacon('/api/admin/drafts', JSON.stringify(data));
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [formData]);
-
-  // 清理定时器
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, []);
 
   // Fetch CSRF token
   useEffect(() => {
@@ -254,7 +99,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
     const fd = new FormData();
     fd.append('file', file);
     const response = await fetch('/api/admin/upload', {
-      method: 'POST', 
+      method: 'POST',
       headers: {
         'x-csrf-token': csrfToken,
       },
@@ -283,18 +128,6 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
       showMessage('error', '请输入新闻内容');
       return;
     }
-    // 定时发布验证
-    if (formData.publish_type === 'scheduled') {
-      if (!formData.scheduled_date || !formData.scheduled_time) {
-        showMessage('error', '请设置定时发布的日期和时间');
-        return;
-      }
-      const scheduledTime = new Date(`${formData.scheduled_date}T${formData.scheduled_time}`);
-      if (scheduledTime <= new Date()) {
-        showMessage('error', '定时发布时间必须晚于当前时间');
-        return;
-      }
-    }
     if (!csrfToken) {
       showMessage('error', '安全令牌未获取，请刷新页面');
       return;
@@ -304,7 +137,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
     try {
       const url = '/api/admin/news';
       const method = mode === 'edit' ? 'PUT' : 'POST';
-      
+
       // 如果没有设置封面图，自动从内容中提取第一张图片
       let imageUrl = formData.image_url;
       if (!imageUrl && formData.content) {
@@ -317,8 +150,8 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
           }
         }
       }
-      
-      // 构建请求体，包含定时发布字段和发布日期
+
+      // 保存后统一进入待发布状态，由列表页手动发布。
       const baseBody = {
         title: formData.title,
         category: formData.category,
@@ -327,14 +160,11 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
         image_source_type: formData.image_source_type,
         is_carousel: formData.is_carousel,
         carousel_order: formData.carousel_order,
-        publish_status: formData.publish_type,
-        scheduled_publish_at: formData.publish_type === 'scheduled' && formData.scheduled_date && formData.scheduled_time
-          ? new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
-          : null,
-        // 手动设置的发布日期（转换为 DateTime）
-        published_at: formData.published_date ? new Date(formData.published_date).toISOString() : undefined,
+        status: 'pending',
+        publish_status: 'immediate',
+        scheduled_publish_at: null,
       };
-      
+
       const body = mode === 'edit'
         ? { ...baseBody, id: newsId }
         : baseBody;
@@ -349,10 +179,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
       const result = await response.json();
 
       if (result.success) {
-        const successMsg = formData.publish_type === 'scheduled'
-          ? `已设置定时发布：${formData.scheduled_date} ${formData.scheduled_time}`
-          : (mode === 'edit' ? '更新成功！' : '发布成功！');
-        showMessage('success', successMsg);
+        showMessage('success', mode === 'edit' ? '保存成功，已转为待发布状态' : '保存成功，已进入待发布列表');
         setTimeout(() => router.push('/admin/news'), 800);
       } else {
         showMessage('error', result.error || '操作失败');
@@ -363,51 +190,6 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
       showMessage('error', '操作失败：' + errorMessage);
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  // Save as draft
-  const handleSaveDraft = async () => {
-    if (!formData.title.trim() || !formData.content.trim()) {
-      showMessage('error', '标题和内容为必填项');
-      return;
-    }
-
-    if (!csrfToken) {
-      showMessage('error', '安全令牌未获取，请刷新页面');
-      return;
-    }
-
-    setSavingDraft(true);
-    try {
-      const response = await fetch('/api/admin/drafts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          type: 'news',
-          title: formData.title,
-          category: formData.category,
-          content: formData.content,
-          imageUrl: formData.image_url || null,
-        }),
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        showMessage('success', '已保存到草稿箱');
-        setTimeout(() => router.push('/admin/news'), 800);
-      } else {
-        showMessage('error', result.error || '保存失败');
-      }
-    } catch (error: unknown) {
-      console.error('Failed to save draft:', error);
-      showMessage('error', '保存失败');
-    } finally {
-      setSavingDraft(false);
     }
   };
 
@@ -448,24 +230,6 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                   {message.text}
                 </span>
               )}
-              {/* 自动保存状态指示器 */}
-              <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-                {autoSaveStatus === 'saving' && (
-                  <>
-                    <FontAwesomeIcon icon={faSpinner} className="animate-spin text-gray-400" />
-                    <span>保存中...</span>
-                  </>
-                )}
-                {autoSaveStatus === 'saved' && lastAutoSaveTime && (
-                  <>
-                    <FontAwesomeIcon icon={faCheckCircle} className="text-green-500" />
-                    <span>已自动保存于 {lastAutoSaveTime}</span>
-                  </>
-                )}
-                {autoSaveStatus === 'idle' && !lastAutoSaveTime && hasChangesRef.current && (
-                  <span className="text-gray-400">编辑中...</span>
-                )}
-              </div>
               <button
                 onClick={() => openPreview({
                   title: formData.title,
@@ -473,27 +237,19 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                   content: formData.content,
                   image_url: formData.image_url,
                 })}
-                disabled={submitting || savingDraft}
+                disabled={submitting}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 <FontAwesomeIcon icon={faEye} />
                 <span className="hidden sm:inline">预览</span>
               </button>
               <button
-                onClick={handleSaveDraft}
-                disabled={savingDraft || submitting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
-                <FontAwesomeIcon icon={savingDraft ? faSpinner : faFileAlt} className={savingDraft ? 'animate-spin' : ''} />
-                <span className="hidden sm:inline">存为草稿</span>
-              </button>
-              <button
                 onClick={handleSubmit}
-                disabled={submitting || savingDraft}
+                disabled={submitting}
                 className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-[#b71c1c] rounded-lg hover:bg-[#8b0000] disabled:opacity-50 transition-colors shadow-sm"
               >
-                <FontAwesomeIcon icon={submitting ? faSpinner : faPaperPlane} className={submitting ? 'animate-spin' : ''} />
-                {mode === 'edit' ? '更新' : '发布'}
+                <FontAwesomeIcon icon={submitting ? faSpinner : faSave} className={submitting ? 'animate-spin' : ''} />
+                保存
               </button>
             </div>
           </div>
@@ -765,81 +521,6 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                   />
                 </div>
               )}
-            </div>
-
-            {/* 发布设置 */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-500 mr-1" />
-                发布设置
-              </h3>
-              <div className="space-y-3">
-                {/* 发布日期（可手动修改） */}
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">发布日期</label>
-                  <input
-                    type="date"
-                    value={formData.published_date}
-                    onChange={(e) => setFormData({ ...formData, published_date: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">前端将显示此日期（年/月/日）</p>
-                </div>
-                
-                <div className="flex gap-4 pt-2 border-t border-gray-100">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="publish_type"
-                      value="immediate"
-                      checked={formData.publish_type === 'immediate'}
-                      onChange={() => setFormData({ ...formData, publish_type: 'immediate' })}
-                      className="w-4 h-4 text-[#b71c1c] focus:ring-[#b71c1c]"
-                    />
-                    <span className="text-sm text-gray-700">立即发布</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="publish_type"
-                      value="scheduled"
-                      checked={formData.publish_type === 'scheduled'}
-                      onChange={() => setFormData({ ...formData, publish_type: 'scheduled' })}
-                      className="w-4 h-4 text-[#b71c1c] focus:ring-[#b71c1c]"
-                    />
-                    <span className="text-sm text-gray-700">定时发布</span>
-                  </label>
-                </div>
-                {formData.publish_type === 'scheduled' && (
-                  <div className="space-y-2 pt-2 border-t border-gray-100">
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">定时发布日期</label>
-                      <input
-                        type="date"
-                        value={formData.scheduled_date}
-                        onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">定时发布时间</label>
-                      <input
-                        type="time"
-                        value={formData.scheduled_time}
-                        onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                      />
-                    </div>
-                    {formData.scheduled_date && formData.scheduled_time && (
-                      <p className="text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
-                        <FontAwesomeIcon icon={faInfoCircle} className="mr-1" />
-                        将于 {formData.scheduled_date} {formData.scheduled_time} 自动发布
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Tips */}
