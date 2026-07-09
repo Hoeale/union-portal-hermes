@@ -10,7 +10,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import RichTextEditor from '@/components/admin/rich-text-editor';
 import BatchActionsBar from '@/components/admin/batch-actions-bar';
-import SchedulePicker from '@/components/admin/schedule-picker';
 import VersionHistory from '@/components/admin/version-history';
 import ReviewPanel from '@/components/admin/review-panel';
 import FileUpload from '@/components/admin/file-upload';
@@ -122,15 +121,13 @@ function AdminPoliciesPageContent() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'published'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [scheduleDate, setScheduleDate] = useState('');
-  const [scheduleTime, setScheduleTime] = useState('09:00');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusConfirmPolicyId, setStatusConfirmPolicyId] = useState<string | null>(null);
   const [statusConfirmTarget, setStatusConfirmTarget] = useState<'pending' | 'published' | null>(null);
@@ -226,8 +223,8 @@ function AdminPoliciesPageContent() {
       if (searchTerm) {
         params.append('search', searchTerm);
       }
-      if (statusFilter === 'pending') {
-        params.append('status', 'pending');
+      if (statusFilter === 'pending' || statusFilter === 'published') {
+        params.append('status', statusFilter);
       }
 
       const response = await fetch(`/api/admin/policies?${params}`);
@@ -338,8 +335,20 @@ function AdminPoliciesPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.category || !formData.content) {
-      showMessage('error', '标题、分类和内容不能为空');
+    // 校验必填字段
+    if (!formData.title.trim()) {
+      showMessage('error', '标题不能为空');
+      return;
+    }
+    if (!formData.category) {
+      showMessage('error', '请选择分类');
+      return;
+    }
+    // 去除 HTML 标签后校验内容是否为空（纯图片内容允许通过）
+    const contentText = formData.content.replace(/<[^>]*>/g, '').trim();
+    const hasMedia = /<img|<video|<audio/i.test(formData.content);
+    if (!contentText && !hasMedia) {
+      showMessage('error', '内容不能为空');
       return;
     }
 
@@ -448,14 +457,17 @@ function AdminPoliciesPageContent() {
         </button>
       </div>
 
-      {/* 消息提示 */}
+      {/* 消息提示 - 固定在屏幕顶部，不被弹框遮挡 */}
       {message && (
         <div
-          className={`p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+          className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${
+            message.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
           }`}
         >
-          {message.text}
+          <FontAwesomeIcon icon={faInfoCircle} />
+          <span>{message.text}</span>
         </div>
       )}
 
@@ -467,6 +479,7 @@ function AdminPoliciesPageContent() {
             {[
               { id: 'all' as const, label: '全部' },
               { id: 'pending' as const, label: '待发布' },
+              { id: 'published' as const, label: '已发布' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -651,7 +664,7 @@ function AdminPoliciesPageContent() {
                     <input
                       type="text"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                       required
                     />
@@ -663,9 +676,11 @@ function AdminPoliciesPageContent() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">分类 *</label>
                       <select
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+                        required
                       >
+                        <option value="">请选择分类</option>
                         {CATEGORIES.map((cat) => (
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
@@ -676,7 +691,7 @@ function AdminPoliciesPageContent() {
                       <input
                         type="date"
                         value={formData.publishDate}
-                        onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, publishDate: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                       />
                     </div>
@@ -688,7 +703,7 @@ function AdminPoliciesPageContent() {
                     <input
                       type="text"
                       value={formData.source}
-                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
                       placeholder="如：全国总工会"
                     />
@@ -700,35 +715,21 @@ function AdminPoliciesPageContent() {
                     <MultiFileUpload
                       uploadType="policy"
                       attachments={formData.attachments}
-                      onChange={(attachments) => setFormData({ 
-                        ...formData, 
+                      onChange={(attachments) => setFormData(prev => ({ 
+                        ...prev, 
                         attachments,
                         fileUrl: attachments.length > 0 ? attachments[0].url : '',
                         fileName: attachments.length > 0 ? attachments[0].fileName : '',
-                      })}
+                      }))}
                     />
                   </div>
-
-                  {/* Schedule Publishing */}
-                  <SchedulePicker
-                    scheduledDate={scheduleDate}
-                    scheduledTime={scheduleTime}
-                    onChange={(date, time) => {
-                      setScheduleDate(date);
-                      setScheduleTime(time);
-                    }}
-                    onClear={() => {
-                      setScheduleDate('');
-                      setScheduleTime('09:00');
-                    }}
-                  />
 
                   {/* 内容 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">内容 *</label>
                     <RichTextEditor
                       content={formData.content}
-                      onChange={(content) => setFormData({ ...formData, content })}
+                      onChange={(content) => setFormData(prev => ({ ...prev, content }))}
                       onImageUpload={handleImageUpload}
                       showPreview={true}
                     />
