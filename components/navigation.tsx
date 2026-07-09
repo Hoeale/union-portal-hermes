@@ -18,6 +18,17 @@ export default function Navigation() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 判断当前路径是否属于某个导航项（支持子路径匹配）
+  const isNavActive = (href: string, name: string, currentPath: string) => {
+    if (currentPath === href) return true;
+    if (href === '/') return false;
+    // 子路径匹配：/news/123 匹配 /news
+    if (currentPath.startsWith(href + '/')) return true;
+    // 特殊处理：/view/[date]/[id] 属于新闻中心
+    if (name === '新闻中心' && currentPath.startsWith('/view/')) return true;
+    return false;
+  };
+
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
@@ -104,10 +115,7 @@ export default function Navigation() {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center">
               {navItems.map((item) => {
-                const isActive = item.href === '/'
-                  ? pathname === '/'
-                  : pathname === item.href || pathname.startsWith(item.href + '/')
-                  || (item.name === '新闻中心' && (pathname.startsWith('/view/') || pathname.startsWith('/news/')));
+                const isActive = isNavActive(item.href, item.name, pathname);
                 return (
                   <Link
                     key={item.name}
@@ -180,9 +188,7 @@ export default function Navigation() {
             <div className="lg:hidden border-t border-[hsl(var(--card-border))] bg-white/95 backdrop-blur-md animate-slide-up">
               <div className="container mx-auto px-4 py-6 space-y-2">
                 {navItems.map((item, index) => {
-                  const isActive = item.href === '/'
-                    ? pathname === '/'
-                    : pathname.startsWith(item.href);
+                  const isActive = isNavActive(item.href, item.name, pathname);
                   return (
                     <Link
                       key={item.name}
