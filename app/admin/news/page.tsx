@@ -6,8 +6,6 @@ import {
   NewsStats,
   NewsFilters,
   NewsList,
-  ScheduledList,
-  DraftList,
   CarouselModal,
   CategoryModal,
 } from '@/components/admin/news';
@@ -54,8 +52,7 @@ export default function AdminNewsPage() {
             {[
               { id: 'all' as const, label: '全部' },
               { id: 'pending' as const, label: '待发布' },
-              { id: 'scheduled' as const, label: '定时发布' },
-              { id: 'draft' as const, label: '草稿' },
+              { id: 'published' as const, label: '已发布' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -96,8 +93,6 @@ export default function AdminNewsPage() {
       <NewsStats
         total={newsManager.total}
         totalAllNews={newsManager.totalAllNews}
-        totalDrafts={newsManager.totalDrafts}
-        totalScheduled={newsManager.totalScheduled}
         totalCarousel={newsManager.totalCarousel}
         categories={newsManager.categories}
         statusFilter={newsManager.statusFilter}
@@ -113,42 +108,25 @@ export default function AdminNewsPage() {
 
       {/* Content Area */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-        {newsManager.statusFilter === 'scheduled' ? (
-          <ScheduledList
-            scheduledNews={newsManager.scheduledNews}
-            loading={newsManager.loading}
-            onExecuteScheduled={newsManager.handleExecuteScheduled}
-            onPublishScheduled={newsManager.handlePublishScheduled}
-            onCancelScheduled={newsManager.handleCancelScheduled}
-          />
-        ) : newsManager.statusFilter === 'draft' ? (
-          <DraftList
-            drafts={newsManager.drafts}
-            onPublishDraft={newsManager.handlePublishDraft}
-            onPreviewDraft={newsManager.handlePreviewDraft}
-            onDeleteDraft={newsManager.handleDeleteDraft}
-          />
-        ) : (
-          <NewsList
-            news={newsManager.filteredNews}
-            loading={newsManager.loading}
-            total={newsManager.total}
-            currentPage={newsManager.currentPage}
-            totalPages={newsManager.totalPages}
-            categoryFilter={newsManager.categoryFilter}
-            selectedIds={newsManager.selectedIds}
-            onSelectAll={newsManager.handleSelectAll}
-            onSelectOne={newsManager.handleSelectOne}
-            onPublish={newsManager.handlePublish}
-            onUnpublish={newsManager.handleUnpublish}
-            onPreview={newsManager.handlePreview}
-            onDelete={(id) => newsManager.setDeleteConfirm(id)}
-            onToggleNotice={newsManager.handleToggleNotice}
-            onPageChange={newsManager.handlePageChange}
-            onBatchActionComplete={newsManager.handleBatchActionComplete}
-            onDeleteConfirm={(id) => newsManager.setDeleteConfirm(id)}
-          />
-        )}
+        <NewsList
+          news={newsManager.filteredNews}
+          loading={newsManager.loading}
+          total={newsManager.total}
+          currentPage={newsManager.currentPage}
+          totalPages={newsManager.totalPages}
+          categoryFilter={newsManager.categoryFilter}
+          selectedIds={newsManager.selectedIds}
+          onSelectAll={newsManager.handleSelectAll}
+          onSelectOne={newsManager.handleSelectOne}
+          onPublish={newsManager.handlePublish}
+          onUnpublish={newsManager.handleUnpublish}
+          onPreview={newsManager.handlePreview}
+          onDelete={(id) => newsManager.setDeleteConfirm(id)}
+          onToggleNotice={newsManager.handleToggleNotice}
+          onPageChange={newsManager.handlePageChange}
+          onBatchActionComplete={newsManager.handleBatchActionComplete}
+          onDeleteConfirm={(id) => newsManager.setDeleteConfirm(id)}
+        />
       </div>
 
       {/* Delete Confirmation Modal */}

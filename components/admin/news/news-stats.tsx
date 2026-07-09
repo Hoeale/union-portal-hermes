@@ -1,26 +1,22 @@
 'use client';
 
-import { NewsCategory } from '@/hooks/useNewsManagement';
+import { NewsCategory, NewsStatusFilter } from '@/hooks/useNewsManagement';
 
 interface NewsStatsProps {
   total: number;
   totalAllNews: number;
-  totalDrafts: number;
-  totalScheduled: number;
   totalCarousel: number;
   categories: NewsCategory[];
-  statusFilter: 'all' | 'pending' | 'draft' | 'scheduled';
+  statusFilter: NewsStatusFilter;
   onCategoryClick: (categoryName: string) => void;
   onCarouselClick: () => void;
-  onStatusFilterChange: (status: 'all' | 'pending' | 'draft' | 'scheduled') => void;
+  onStatusFilterChange: (status: NewsStatusFilter) => void;
   onPageChange: (page: number) => void;
 }
 
 export default function NewsStats({
   total,
   totalAllNews,
-  totalDrafts,
-  totalScheduled,
   totalCarousel,
   categories,
   statusFilter,
@@ -34,10 +30,8 @@ export default function NewsStats({
     switch (statusFilter) {
       case 'pending':
         return total;
-      case 'draft':
-        return totalDrafts;
-      case 'scheduled':
-        return totalScheduled;
+      case 'published':
+        return total;
       case 'all':
       default:
         return totalAllNews;
@@ -47,8 +41,7 @@ export default function NewsStats({
   const statusLabel = () => {
     switch (statusFilter) {
       case 'pending': return '待发布';
-      case 'draft': return '草稿';
-      case 'scheduled': return '定时发布';
+      case 'published': return '已发布';
       default: return '总数';
     }
   };
