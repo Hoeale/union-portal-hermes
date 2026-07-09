@@ -50,8 +50,6 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any; color: string; bg
 const STATUS_MAP: Record<string, { label: string; icon: any; color: string; bgColor: string; dotColor: string }> = {
   unread: { label: '未读', icon: faClock, color: 'text-red-700', bgColor: 'bg-red-100', dotColor: 'bg-red-500' },
   read: { label: '已读', icon: faEye, color: 'text-blue-700', bgColor: 'bg-blue-100', dotColor: 'bg-blue-500' },
-  processing: { label: '处理中', icon: faHourglassHalf, color: 'text-orange-700', bgColor: 'bg-orange-100', dotColor: 'bg-orange-500' },
-  resolved: { label: '已解决', icon: faCheckCircle, color: 'text-green-700', bgColor: 'bg-green-100', dotColor: 'bg-green-500' },
 };
 
 export default function AdminFeedbackPage() {
@@ -358,13 +356,6 @@ export default function AdminFeedbackPage() {
           <p className="text-gray-600 mt-1">查看和管理用户提交的留言建议</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowStats(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <FontAwesomeIcon icon={faChartBar} />
-            查看统计
-          </button>
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
@@ -518,8 +509,6 @@ export default function AdminFeedbackPage() {
                           >
                             <option value="unread">未读</option>
                             <option value="read">已读</option>
-                            <option value="processing">处理中</option>
-                            <option value="resolved">已解决</option>
                           </select>
                         </div>
                       </td>
@@ -782,10 +771,6 @@ export default function AdminFeedbackPage() {
       )}
 
       {/* Stats Modal */}
-      {showStats && (
-        <FeedbackStats onClose={() => setShowStats(false)} />
-      )}
-
       {/* 状态更新确认弹窗 */}
       {statusUpdateConfirm && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
