@@ -418,32 +418,37 @@
   content: '';
 }
 
-/* 图片对齐样式 - 使用 flex 布局，与编辑器 NodeView 保持一致 */
+/* 图片 - wangEditor 通过内联样式控制对齐/宽度，此处仅做基础约束与默认间距 */
 .rich-text-content img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.5rem;
-  max-height: 500px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 0.25rem;
   display: block;
-  /* 默认居中 */
-  margin: 1rem auto;
+  margin: 1em auto;
 }
 
-/* 左对齐 - 匹配编辑器 NodeView 的 justify-content: flex-start */
-.rich-text-content img[data-align="left"] {
-  margin-left: 0;
-  margin-right: auto;
+/* 表格 - wangEditor 表格边框依赖外部 CSS，否则前台无边框 */
+.rich-text-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  table-layout: auto;
 }
 
-/* 右对齐 - 匹配编辑器 NodeView 的 justify-content: flex-end */
-.rich-text-content img[data-align="right"] {
-  margin-left: auto;
-  margin-right: 0;
+.rich-text-content th,
+.rich-text-content td {
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+  min-width: 60px;
+  vertical-align: top;
 }
 
-/* 居中对齐 - 匹配编辑器 NodeView 的 justify-content: center */
-.rich-text-content img[data-align="center"] {
-  margin-left: auto;
-  margin-right: auto;
+.rich-text-content th {
+  background-color: #f3f4f6;
+  font-weight: 700;
+  text-align: left;
+}
+
+.rich-text-content table tbody tr:nth-child(even) td {
+  background-color: #fafafa;
 }
