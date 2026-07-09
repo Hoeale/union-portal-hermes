@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import RichTextEditor from '@/components/admin/rich-text-editor';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -46,6 +46,16 @@ interface NewsCategory {
   color: string | null;
 }
 
+interface NewsFormData {
+  title: string;
+  category: string;
+  content: string;
+  image_url: string;
+  image_source_type: 'local' | 'external';
+  is_carousel: boolean;
+  carousel_order: number;
+}
+
 export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProps) {
   const router = useRouter();
   const [csrfToken, setCsrfToken] = useState('');
@@ -67,7 +77,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
       .catch(err => console.error('Failed to fetch categories:', err));
   }, []);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<NewsFormData>({
     title: initialData?.title || '',
     category: initialData?.category || '',
     content: initialData?.content || '',
@@ -266,7 +276,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                 className="w-full text-2xl font-bold text-gray-900 border-none outline-none placeholder-gray-300 p-0"
                 placeholder="请输入新闻标题..."
               />
@@ -311,7 +321,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
               {activeTab === 'content' ? (
                 <RichTextEditor
                   content={formData.content}
-                  onChange={(content) => setFormData({ ...formData, content })}
+                  onChange={(content) => setFormData((prev) => ({ ...prev, content }))}
                   onImageUpload={handleImageUpload}
                 />
               ) : (
@@ -376,7 +386,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                         value={cat.name}
                         checked={formData.category === cat.name}
                         onChange={(e) =>
-                          setFormData({ ...formData, category: e.target.value })
+                          setFormData((prev) => ({ ...prev, category: e.target.value }))
                         }
                         className="sr-only"
                       />
@@ -407,7 +417,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
               {/* Source toggle */}
               <div className="flex gap-4 mb-3">
                 <button
-                  onClick={() => setFormData({ ...formData, image_source_type: 'local', image_url: '' })}
+                  onClick={() => setFormData((prev) => ({ ...prev, image_source_type: 'local', image_url: '' }))}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                     formData.image_source_type === 'local'
                       ? 'bg-[#b71c1c] text-white'
@@ -418,7 +428,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                   本地上传
                 </button>
                 <button
-                  onClick={() => setFormData({ ...formData, image_source_type: 'external', image_url: '' })}
+                  onClick={() => setFormData((prev) => ({ ...prev, image_source_type: 'external', image_url: '' }))}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                     formData.image_source_type === 'external'
                       ? 'bg-[#b71c1c] text-white'
@@ -443,7 +453,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                       if (file) {
                         try {
                           const url = await handleImageUpload(file);
-                          setFormData({ ...formData, image_url: url });
+                          setFormData((prev) => ({ ...prev, image_url: url }));
                         } catch {
                           showMessage('error', '图片上传失败');
                         }
@@ -455,7 +465,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                 <input
                   type="url"
                   value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, image_url: e.target.value }))}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
                   placeholder="https://example.com/image.jpg"
                 />
@@ -472,7 +482,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                     {formData.image_source_type === 'local' ? '本地' : '外链'}
                   </span>
                   <button
-                    onClick={() => setFormData({ ...formData, image_url: '' })}
+                    onClick={() => setFormData((prev) => ({ ...prev, image_url: '' }))}
                     className="absolute bottom-2 right-2 px-2 py-0.5 text-xs bg-red-600 text-white rounded hover:bg-red-700"
                   >
                     移除
@@ -492,7 +502,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                   type="checkbox"
                   checked={formData.is_carousel}
                   onChange={(e) =>
-                    setFormData({ ...formData, is_carousel: e.target.checked })
+                    setFormData((prev) => ({ ...prev, is_carousel: e.target.checked }))
                   }
                   disabled={isPending}
                   className="rounded border-gray-300 text-[#b71c1c] focus:ring-[#b71c1c] h-4 w-4"
@@ -511,10 +521,10 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                     type="number"
                     value={formData.carousel_order}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
+                      setFormData((prev) => ({
+                        ...prev,
                         carousel_order: parseInt(e.target.value) || 0,
-                      })
+                      }))
                     }
                     className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
                     min="0"
@@ -544,8 +554,8 @@ function SettingsPanel({
   handleImageUpload,
   isPending,
 }: {
-  formData: any;
-  setFormData: any;
+  formData: NewsFormData;
+  setFormData: Dispatch<SetStateAction<NewsFormData>>;
   handleImageUpload: (file: File) => Promise<string>;
   isPending: boolean;
 }) {
@@ -560,7 +570,7 @@ function SettingsPanel({
               name="settings_image_source"
               value="local"
               checked={formData.image_source_type === 'local'}
-              onChange={() => setFormData({ ...formData, image_source_type: 'local', image_url: '' })}
+              onChange={() => setFormData((prev) => ({ ...prev, image_source_type: 'local', image_url: '' }))}
               className="w-4 h-4 text-[#b71c1c] focus:ring-[#b71c1c]"
             />
             <span className="text-sm text-gray-700">本地上传</span>
@@ -571,7 +581,7 @@ function SettingsPanel({
               name="settings_image_source"
               value="external"
               checked={formData.image_source_type === 'external'}
-              onChange={() => setFormData({ ...formData, image_source_type: 'external', image_url: '' })}
+              onChange={() => setFormData((prev) => ({ ...prev, image_source_type: 'external', image_url: '' }))}
               className="w-4 h-4 text-[#b71c1c] focus:ring-[#b71c1c]"
             />
             <span className="text-sm text-gray-700">外部链接</span>
@@ -592,7 +602,7 @@ function SettingsPanel({
                 if (file) {
                   try {
                     const url = await handleImageUpload(file);
-                    setFormData({ ...formData, image_url: url });
+                    setFormData((prev) => ({ ...prev, image_url: url }));
                   } catch {
                     // handled by parent
                   }
@@ -604,7 +614,7 @@ function SettingsPanel({
           <input
             type="url"
             value={formData.image_url}
-            onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+            onChange={(e) => setFormData((prev) => ({ ...prev, image_url: e.target.value }))}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
             placeholder="https://example.com/image.jpg"
           />
@@ -625,7 +635,7 @@ function SettingsPanel({
           <input
             type="checkbox"
             checked={formData.is_carousel}
-            onChange={(e) => setFormData({ ...formData, is_carousel: e.target.checked })}
+            onChange={(e) => setFormData((prev) => ({ ...prev, is_carousel: e.target.checked }))}
             disabled={isPending}
             className="rounded border-gray-300 text-[#b71c1c] focus:ring-[#b71c1c] h-5 w-5"
           />
@@ -641,7 +651,7 @@ function SettingsPanel({
               type="number"
               value={formData.carousel_order}
               onChange={(e) =>
-                setFormData({ ...formData, carousel_order: parseInt(e.target.value) || 0 })
+                setFormData((prev) => ({ ...prev, carousel_order: parseInt(e.target.value) || 0 }))
               }
               className="w-24 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
               min="0"

@@ -42,6 +42,9 @@ export interface NewsCategory {
 
 export type NewsStatusFilter = 'all' | 'pending' | 'published';
 
+const getStatusQuery = (statusFilter: NewsStatusFilter) =>
+  statusFilter === 'all' ? '' : `&status=${statusFilter}`;
+
 export function useNewsManagement() {
   const router = useRouter();
   const csrfToken = useCsrfToken();
@@ -94,9 +97,38 @@ export function useNewsManagement() {
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setCategories(result.data);
+        await fetchCategoryStats(result.data, statusFilter);
       }
     } catch (error) {
       logger.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchCategoryStats = async (
+    sourceCategories: NewsCategory[] = categories,
+    status: NewsStatusFilter = statusFilter
+  ) => {
+    if (sourceCategories.length === 0) return;
+
+    try {
+      const statusQuery = getStatusQuery(status);
+      const categoriesWithCount = await Promise.all(
+        sourceCategories.map(async (cat) => {
+          const response = await fetch(
+            `/api/admin/news?category=${encodeURIComponent(cat.name)}&page=1&pageSize=1${statusQuery}`
+          );
+          const result = await response.json();
+
+          return {
+            ...cat,
+            newsCount: result.success ? result.total : 0,
+          };
+        })
+      );
+
+      setCategories(categoriesWithCount);
+    } catch (error) {
+      logger.error('Failed to fetch category stats:', error);
     }
   };
 
@@ -202,22 +234,17 @@ export function useNewsManagement() {
   // Fetch category stats
   const fetchStats = async () => {
     try {
-      const [totalRes, dynamicRes, noticeRes, announcementRes, carouselRes] = await Promise.all([
-        fetch('/api/admin/news?page=1&pageSize=1'),
-        fetch('/api/admin/news?category=动态&page=1&pageSize=1'),
-        fetch('/api/admin/news?category=通知&page=1&pageSize=1'),
-        fetch('/api/admin/news?category=公告&page=1&pageSize=1'),
+      const statusQuery = getStatusQuery(statusFilter);
+      const [totalRes, carouselRes] = await Promise.all([
+        fetch(`/api/admin/news?page=1&pageSize=1${statusQuery}`),
         fetch('/api/admin/news?page=1&pageSize=100'),
       ]);
-      const [totalResult, dynamicResult, noticeResult, announcementResult, carouselResult] = await Promise.all([
+      const [totalResult, carouselResult] = await Promise.all([
         totalRes.json(),
-        dynamicRes.json(),
-        noticeRes.json(),
-        announcementRes.json(),
         carouselRes.json(),
       ]);
 
-      if (totalResult.success) {
+      if (totalResult.success && statusFilter === 'all') {
         setTotalAllNews(totalResult.total);
       }
 
@@ -227,9 +254,9 @@ export function useNewsManagement() {
       setTotalCarousel(carouselCount);
 
       setTotalByCategory({
-        dynamic: dynamicResult.success ? dynamicResult.total : 0,
-        notice: noticeResult.success ? noticeResult.total : 0,
-        announcement: announcementResult.success ? announcementResult.total : 0,
+        dynamic: 0,
+        notice: 0,
+        announcement: 0,
         carousel: carouselCount,
       });
     } catch (error) {
@@ -326,12 +353,16 @@ export function useNewsManagement() {
   // Effects
   useEffect(() => {
     fetchNews();
+    fetchStats();
   }, [statusFilter, currentPage, categoryFilter]);
 
   useEffect(() => {
     fetchCategories();
-    fetchStats();
   }, []);
+
+  useEffect(() => {
+    fetchCategoryStats();
+  }, [statusFilter]);
 
   useEffect(() => {
     setSelectedIds([]);
