@@ -149,7 +149,9 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
       showMessage('error', '请输入新闻标题');
       return;
     }
-    if (!getPlainTextFromContent(formData.content)) {
+    const hasContentText = Boolean(getPlainTextFromContent(formData.content));
+    const hasContentImage = Boolean(extractFirstImageFromContent(formData.content));
+    if (!hasContentText && !hasContentImage) {
       showMessage('error', '请输入新闻内容');
       return;
     }
