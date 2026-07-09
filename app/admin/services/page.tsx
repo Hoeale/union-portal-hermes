@@ -606,16 +606,6 @@ export default function AdminServicesPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowGlobalSettings(!showGlobalSettings)}
-            className={`px-4 py-2 border rounded-lg transition-colors ${
-              showGlobalSettings 
-                ? 'bg-[#b71c1c] text-white border-[#b71c1c]' 
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            全局设置
-          </button>
-          <button
             onClick={() => setShowPageSettings(!showPageSettings)}
             className={`px-4 py-2 border rounded-lg transition-colors ${
               showPageSettings 
@@ -686,8 +676,9 @@ export default function AdminServicesPage() {
         </div>
       )}
 
-      {/* Global Settings */}
-      {showGlobalSettings && (
+      {/* 全局设置已隐藏 — 用户可自行编辑每项服务的字段 */}
+      {/* Global Settings panel removed */}
+      {false && showGlobalSettings && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-lg font-semibold text-[#1e2b3c]">全局显示设置</h2>
@@ -1169,7 +1160,7 @@ export default function AdminServicesPage() {
           <li>每个服务包含四个可独立控制的部分：服务介绍、评选条件、申报流程、温馨提示</li>
           <li>可以通过开关控制每个部分是否在前台显示</li>
           <li>使用箭头按钮调整服务在前台的显示顺序</li>
-          <li>点击眼睛图标可显示或隐藏服务</li>
+          <li>点击开关按钮可显示或隐藏服务</li>
           <li>所有富文本内容支持图片上传和预览功能</li>
         </ul>
       </div>
