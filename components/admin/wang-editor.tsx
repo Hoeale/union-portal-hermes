@@ -26,7 +26,7 @@ export default function WangEditor({
   const editorRef = useRef<IDomEditor | null>(null);
   const lastHtmlRef = useRef<string>('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [wordCount, setWordCount] = useState({ words: 0, characters: 0 });
+  const [charCount, setCharCount] = useState(0);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewContent, setPreviewContent] = useState('');
@@ -79,11 +79,8 @@ export default function WangEditor({
   };
 
   const updateWordCount = (ed: IDomEditor) => {
-    const text = ed.getText();
-    setWordCount({
-      words: text.trim() ? text.trim().split(/\s+/).length : 0,
-      characters: text.length,
-    });
+    // 按字符统计：一个汉字算一个字符，一个字母算一个字符
+    setCharCount(ed.getText().length);
   };
 
   // 外部 content 变化时同步到编辑器（如切换编辑不同文章）
@@ -125,7 +122,7 @@ export default function WangEditor({
       <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <FaChartBar className="text-gray-400" />
-          <span>字数: {wordCount.words} | 字符: {wordCount.characters}</span>
+          <span>字数: {charCount}</span>
         </div>
         <div className="flex items-center gap-1">
           {showTemplates && (

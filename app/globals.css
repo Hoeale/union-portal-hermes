@@ -351,27 +351,7 @@
   word-break: break-word;
 }
 
-/* 字号支持 - 保留编辑器设置的 font-size */
-.rich-text-content span[style*="font-size"] {
-  /* font-size 通过内联样式设置，此处不覆盖 */
-}
-
-/* ⚠️ 重要：空段落保留为段落间隔，不要改为 display: none
- * 
- * TipTap 富文本编辑器输出的空 <p></p> 标签需要保留为视觉间隔。
- * 如果改为 display: none，会导致：
- * - 段落之间失去视觉间隔，内容挤在一起
- * - 后台编辑时按回车产生的换行效果在前端消失
- * - 影响 9 个业务模块的可读性（工会概况、新闻详情、政策文件、职工服务等）
- * 
- * 影响模块：about, news/[id], policies/[id], workers, view/[date]/[id],
- *          preview/editor, preview/news/[id], preview/policy/[id], preview/draft/[id]
- */
-.rich-text-content p:empty {
-  display: block;
-  height: 1.75rem;
-  margin: 0.75rem 0;
-}
+/* 字号、颜色等由 wangEditor 内联样式控制，此处不再覆盖 */
 
 .rich-text-content ul {
   list-style: disc;
@@ -401,30 +381,20 @@
   text-decoration: underline;
 }
 
-/* 富文本容器 - normal 让 <p> 等块级元素正常布局 */
+/* 富文本容器 - 换行/断词控制（word-break 可继承到所有子元素） */
 .rich-text-content {
   word-wrap: break-word;
   overflow-wrap: break-word;
-}
-
-/* 富文本段落统一样式 */
-.rich-text-content p,
-.rich-text-content div {
   word-break: break-word;
 }
 
-/* 编辑器中的 <br> (Shift+Enter 硬换行) 在前端显示为正常换行 */
-.rich-text-content br {
-  content: '';
-}
-
-/* 图片 - wangEditor 通过内联样式控制对齐/宽度，此处仅做基础约束与默认间距 */
+/* 图片 - 与 wangEditor 编辑器一致：默认 inline、左对齐；
+   宽度/对齐由 wangEditor 内联样式或段落 text-align 控制，不强制居中 */
 .rich-text-content img {
   max-width: 100%;
   height: auto;
   border-radius: 0.25rem;
-  display: block;
-  margin: 1em auto;
+  vertical-align: top;
 }
 
 /* 表格 - wangEditor 表格边框依赖外部 CSS，否则前台无边框 */
