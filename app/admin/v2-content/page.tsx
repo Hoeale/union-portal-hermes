@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faSpinner, faInfoCircle, faHeader, faQrcode, faBars, faEye, faEyeSlash, faChevronUp, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useCsrfToken, useMessage } from '@/hooks';
 import { apiClient } from '@/lib/api-client';
+import ImageUpload from '@/components/admin/image-upload';
 
 interface NavItem {
   id: string;
@@ -93,44 +94,6 @@ export default function AdminV2ContentPage() {
       // Error handled silently
     } finally {
       setLoading(false);
-    }
-  };
-
-  // 处理文件上传
-  const handleFileUpload = async (file: File, field: 'logo' | 'background_image' | 'qrcode_image_1' | 'qrcode_image_2') => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('field', field);
-
-    try {
-      const response = await fetch('/api/admin/upload', {
-        method: 'POST',
-        headers: {
-          'x-csrf-token': csrfToken,
-        },
-        credentials: 'include',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (field === 'logo' || field === 'background_image') {
-          setConfig({
-            ...config,
-            v2_header: { ...config.v2_header, [field]: data.url },
-          });
-        } else if (field === 'qrcode_image_1' || field === 'qrcode_image_2') {
-          setConfig({
-            ...config,
-            v2_service_panel: { ...config.v2_service_panel, [field]: data.url },
-          });
-        }
-        showMessage('success', '文件上传成功');
-      } else {
-        showMessage('error', '文件上传失败');
-      }
-    } catch (error) {
-      showMessage('error', '文件上传失败');
     }
   };
 
@@ -230,43 +193,11 @@ export default function AdminV2ContentPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Logo 图片
                 </label>
-                <div className="flex items-start gap-4">
-                  <div className="w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
-                    {config.v2_header.logo ? (
-                      <img
-                        src={config.v2_header.logo}
-                        alt="Logo预览"
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <span className="text-gray-400 text-xs">无Logo</span>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <label className="block">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleFileUpload(file, 'logo');
-                        }}
-                        className="hidden"
-                      />
-                      <div className="w-full px-4 py-2.5 bg-[#b71c1c] text-white text-center rounded-lg cursor-pointer hover:bg-[#8b0000] transition-colors">
-                        本地上传
-                      </div>
-                    </label>
-                    <input
-                      type="text"
-                      value={config.v2_header.logo}
-                      onChange={(e) => setConfig({ ...config, v2_header: { ...config.v2_header, logo: e.target.value } })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                      placeholder="或输入Logo链接，如：/logo.png 或 https://..."
-                    />
-                    <p className="text-xs text-gray-500">支持 JPG、PNG 格式，建议尺寸 80x80px</p>
-                  </div>
-                </div>
+                <ImageUpload
+                  value={config.v2_header.logo}
+                  onChange={(url) => setConfig({ ...config, v2_header: { ...config.v2_header, logo: url } })}
+                  hint="支持 JPG、PNG 格式，建议尺寸 80x80px"
+                />
               </div>
 
               <div>
@@ -342,42 +273,11 @@ export default function AdminV2ContentPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     二维码 1 图片
                   </label>
-                  <div className="flex items-start gap-4">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
-                      {config.v2_service_panel.qrcode_image_1 ? (
-                        <img
-                          src={config.v2_service_panel.qrcode_image_1}
-                          alt="二维码1预览"
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <span className="text-gray-400 text-xs">无图片</span>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <label className="block">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload(file, 'qrcode_image_1');
-                          }}
-                          className="hidden"
-                        />
-                        <div className="w-full px-4 py-2.5 bg-[#b71c1c] text-white text-center rounded-lg cursor-pointer hover:bg-[#8b0000] transition-colors">
-                          本地上传
-                        </div>
-                      </label>
-                      <input
-                        type="text"
-                        value={config.v2_service_panel.qrcode_image_1}
-                        onChange={(e) => setConfig({ ...config, v2_service_panel: { ...config.v2_service_panel, qrcode_image_1: e.target.value } })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                        placeholder="或输入图片链接，如：/uploads/wechat-qrcode.jpg"
-                      />
-                    </div>
-                  </div>
+                  <ImageUpload
+                    value={config.v2_service_panel.qrcode_image_1}
+                    onChange={(url) => setConfig({ ...config, v2_service_panel: { ...config.v2_service_panel, qrcode_image_1: url } })}
+                    hint="支持 JPG、PNG 格式，建议尺寸 200x200px"
+                  />
                 </div>
               </div>
 
@@ -398,42 +298,11 @@ export default function AdminV2ContentPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     二维码 2 图片
                   </label>
-                  <div className="flex items-start gap-4">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
-                      {config.v2_service_panel.qrcode_image_2 ? (
-                        <img
-                          src={config.v2_service_panel.qrcode_image_2}
-                          alt="二维码2预览"
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <span className="text-gray-400 text-xs">无图片</span>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <label className="block">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload(file, 'qrcode_image_2');
-                          }}
-                          className="hidden"
-                        />
-                        <div className="w-full px-4 py-2.5 bg-[#b71c1c] text-white text-center rounded-lg cursor-pointer hover:bg-[#8b0000] transition-colors">
-                          本地上传
-                        </div>
-                      </label>
-                      <input
-                        type="text"
-                        value={config.v2_service_panel.qrcode_image_2}
-                        onChange={(e) => setConfig({ ...config, v2_service_panel: { ...config.v2_service_panel, qrcode_image_2: e.target.value } })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
-                        placeholder="或输入图片链接，如：/uploads/video-qrcode.jpg"
-                      />
-                    </div>
-                  </div>
+                  <ImageUpload
+                    value={config.v2_service_panel.qrcode_image_2}
+                    onChange={(url) => setConfig({ ...config, v2_service_panel: { ...config.v2_service_panel, qrcode_image_2: url } })}
+                    hint="支持 JPG、PNG 格式，建议尺寸 200x200px"
+                  />
                 </div>
               </div>
 
