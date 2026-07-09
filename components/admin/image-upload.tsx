@@ -18,6 +18,12 @@ interface ImageUploadProps {
   maxSize?: number;
   /** 预览缩略图尺寸（px），默认 80 */
   previewSize?: number;
+  /** 预览宽度，默认使用 previewSize */
+  previewWidth?: number | string;
+  /** 预览高度，默认使用 previewSize */
+  previewHeight?: number | string;
+  /** 图片填充方式，默认 contain */
+  objectFit?: 'contain' | 'cover';
   /** 提示文字 */
   hint?: string;
 }
@@ -31,6 +37,9 @@ export default function ImageUpload({
   accept = 'image/*',
   maxSize = DEFAULT_MAX_SIZE,
   previewSize = 80,
+  previewWidth,
+  previewHeight,
+  objectFit = 'contain',
   hint,
 }: ImageUploadProps) {
   const csrfToken = useCsrfToken();
@@ -112,6 +121,8 @@ export default function ImageUpload({
   };
 
   const hasImage = !!value;
+  const width = previewWidth ?? previewSize;
+  const height = previewHeight ?? previewSize;
 
   return (
     <div>
@@ -127,7 +138,7 @@ export default function ImageUpload({
                     : 'border-gray-300 hover:border-[hsl(var(--primary))]'
                 }`
           }`}
-          style={{ width: previewSize, height: previewSize }}
+          style={{ width, height }}
           onClick={() => !hasImage && !uploading && fileInputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
@@ -146,7 +157,7 @@ export default function ImageUpload({
               <img
                 src={value}
                 alt="预览"
-                className="w-full h-full object-contain"
+                className={objectFit === 'cover' ? 'w-full h-full object-cover' : 'w-full h-full object-contain'}
               />
               {/* hover 遮罩 + 操作 */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

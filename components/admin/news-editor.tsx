@@ -3,6 +3,7 @@
 import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import RichTextEditor from '@/components/admin/rich-text-editor';
+import ImageUpload from '@/components/admin/image-upload';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft, faSave, faSpinner,
@@ -352,7 +353,6 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                   formData={formData}
                   setFormData={setFormData}
                   onCarouselChange={handleCarouselChange}
-                  handleImageUpload={handleImageUpload}
                   isPending={isPending}
                 />
               )}
@@ -465,26 +465,18 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
               </div>
 
               {formData.image_source_type === 'local' ? (
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#b71c1c] transition-colors bg-gray-50 hover:bg-red-50/30">
-                  <FontAwesomeIcon icon={faImage} className="text-2xl text-gray-400 mb-2" />
-                  <span className="text-xs text-gray-500">点击上传封面</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          const url = await handleImageUpload(file);
-                          setFormData((prev) => ({ ...prev, image_url: url }));
-                        } catch {
-                          showMessage('error', '图片上传失败');
-                        }
-                      }
-                    }}
-                  />
-                </label>
+                <ImageUpload
+                  value={formData.image_url}
+                  onChange={(url) => setFormData((prev) => ({
+                    ...prev,
+                    image_url: url,
+                    is_carousel: url ? prev.is_carousel : false,
+                  }))}
+                  previewWidth="100%"
+                  previewHeight={128}
+                  objectFit="cover"
+                  hint="支持 JPG、PNG 格式，建议上传清晰横图"
+                />
               ) : (
                 <input
                   type="url"
@@ -495,7 +487,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                 />
               )}
 
-              {formData.image_url && (
+              {formData.image_url && formData.image_source_type === 'external' && (
                 <div className="mt-3 relative">
                   <img
                     src={formData.image_url}
@@ -503,7 +495,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
                     className="w-full h-32 rounded-lg object-cover"
                   />
                   <span className="absolute top-2 right-2 px-2 py-0.5 text-xs bg-black/50 text-white rounded">
-                    {formData.image_source_type === 'local' ? '本地' : '外链'}
+                    外链
                   </span>
                   <button
                     onClick={() => setFormData((prev) => ({ ...prev, image_url: '', is_carousel: false }))}
@@ -574,13 +566,11 @@ function SettingsPanel({
   formData,
   setFormData,
   onCarouselChange,
-  handleImageUpload,
   isPending,
 }: {
   formData: NewsFormData;
   setFormData: Dispatch<SetStateAction<NewsFormData>>;
   onCarouselChange: (checked: boolean) => void;
-  handleImageUpload: (file: File) => Promise<string>;
   isPending: boolean;
 }) {
   return (
@@ -612,28 +602,18 @@ function SettingsPanel({
           </label>
         </div>
         {formData.image_source_type === 'local' ? (
-          <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#b71c1c] transition-colors bg-white">
-            <div className="text-center">
-              <FontAwesomeIcon icon={faImage} className="text-xl text-gray-400 mb-1" />
-              <p className="text-xs text-gray-500">点击上传封面图片</p>
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  try {
-                    const url = await handleImageUpload(file);
-                    setFormData((prev) => ({ ...prev, image_url: url }));
-                  } catch {
-                    // handled by parent
-                  }
-                }
-              }}
-            />
-          </label>
+          <ImageUpload
+            value={formData.image_url}
+            onChange={(url) => setFormData((prev) => ({
+              ...prev,
+              image_url: url,
+              is_carousel: url ? prev.is_carousel : false,
+            }))}
+            previewWidth="100%"
+            previewHeight={96}
+            objectFit="cover"
+            hint="支持 JPG、PNG 格式，建议上传清晰横图"
+          />
         ) : (
           <input
             type="url"
@@ -643,11 +623,11 @@ function SettingsPanel({
             placeholder="https://example.com/image.jpg"
           />
         )}
-        {formData.image_url && (
+        {formData.image_url && formData.image_source_type === 'external' && (
           <div className="mt-3 relative">
             <img src={formData.image_url} alt="封面预览" className="w-full h-32 rounded-lg object-cover" />
             <span className="absolute top-2 right-2 px-2 py-0.5 text-xs bg-black/50 text-white rounded">
-              {formData.image_source_type === 'local' ? '本地' : '外链'}
+              外链
             </span>
           </div>
         )}

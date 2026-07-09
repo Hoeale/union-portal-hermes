@@ -70,6 +70,8 @@ export default function AdminV2ContentPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'header' | 'service-panel' | 'nav'>('header');
+  const [titleError, setTitleError] = useState('');
+  const [panelTitleError, setPanelTitleError] = useState('');
   const csrfToken = useCsrfToken();
   const { message, showMessage } = useMessage();
 
@@ -98,6 +100,20 @@ export default function AdminV2ContentPage() {
   };
 
   const handleSave = async () => {
+    if (!config.v2_header.title.trim()) {
+      setActiveTab('header');
+      setTitleError('请填写网站标题');
+      showMessage('error', '请填写网站标题');
+      return;
+    }
+
+    if (!config.v2_service_panel.title.trim()) {
+      setActiveTab('service-panel');
+      setPanelTitleError('请填写面板标题');
+      showMessage('error', '请填写面板标题');
+      return;
+    }
+
     if (!csrfToken) {
       showMessage('error', '安全令牌未获取，请刷新页面重试');
       return;
@@ -204,11 +220,21 @@ export default function AdminV2ContentPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   网站标题 <span className="text-red-500">*</span>
                 </label>
+                {titleError && (
+                  <p className="mb-2 text-sm text-red-600">{titleError}</p>
+                )}
                 <input
                   type="text"
                   value={config.v2_header.title}
-                  onChange={(e) => setConfig({ ...config, v2_header: { ...config.v2_header, title: e.target.value } })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
+                  onChange={(e) => {
+                    setConfig({ ...config, v2_header: { ...config.v2_header, title: e.target.value } });
+                    if (e.target.value.trim()) {
+                      setTitleError('');
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent ${
+                    titleError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
                   placeholder="西安高新区总工会"
                 />
               </div>
@@ -247,11 +273,21 @@ export default function AdminV2ContentPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   面板标题 <span className="text-red-500">*</span>
                 </label>
+                {panelTitleError && (
+                  <p className="mb-2 text-sm text-red-600">{panelTitleError}</p>
+                )}
                 <input
                   type="text"
                   value={config.v2_service_panel.title}
-                  onChange={(e) => setConfig({ ...config, v2_service_panel: { ...config.v2_service_panel, title: e.target.value } })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
+                  onChange={(e) => {
+                    setConfig({ ...config, v2_service_panel: { ...config.v2_service_panel, title: e.target.value } });
+                    if (e.target.value.trim()) {
+                      setPanelTitleError('');
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent ${
+                    panelTitleError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
                   placeholder="欢迎关注"
                 />
               </div>
