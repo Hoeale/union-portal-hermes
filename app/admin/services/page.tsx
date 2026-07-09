@@ -393,6 +393,7 @@ export default function AdminServicesPage() {
   };
 
   const handleCancel = () => {
+    setShowModal(false);
     setEditingId(null);
     setIsCreating(false);
     setFormData({
@@ -455,6 +456,11 @@ export default function AdminServicesPage() {
   const handleSave = async () => {
     if (!formData.title.trim()) {
       showMessage('error', '服务标题不能为空');
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      showMessage('error', '服务描述不能为空');
       return;
     }
 
@@ -665,7 +671,7 @@ export default function AdminServicesPage() {
       {/* Message Alert */}
       {message && (
         <div
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${
+          className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${
             message.type === 'success'
               ? 'bg-green-50 border-green-200 text-green-800'
               : 'bg-red-50 border-red-200 text-red-800'
@@ -883,7 +889,7 @@ export default function AdminServicesPage() {
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    服务描述
+                    服务描述 <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={formData.description}
