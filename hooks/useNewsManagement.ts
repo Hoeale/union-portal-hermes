@@ -717,6 +717,8 @@ export function useNewsManagement() {
     totalPages,
     total,
     totalAllNews,
+    totalDrafts,
+    totalScheduled,
     selectedIds,
     totalCarousel,
     totalByCategory,

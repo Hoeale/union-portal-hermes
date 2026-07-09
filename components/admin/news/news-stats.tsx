@@ -5,6 +5,8 @@ import { NewsCategory } from '@/hooks/useNewsManagement';
 interface NewsStatsProps {
   total: number;
   totalAllNews: number;
+  totalDrafts: number;
+  totalScheduled: number;
   totalCarousel: number;
   categories: NewsCategory[];
   statusFilter: 'all' | 'pending' | 'draft' | 'scheduled';
