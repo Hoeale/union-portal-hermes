@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import FrontendWrapper from '@/components/frontend-wrapper';
 import { ArrowLeft, Calendar, FileText, Download } from 'lucide-react';
-import FileDownloadButton from '@/components/file-download-button';
+import PolicyAttachmentItem from '@/components/policy-attachment-item';
 
 interface Attachment {
   url: string;
@@ -138,13 +138,12 @@ export default async function PolicyDetailPage({
                   <Download className="w-5 h-5" />
                   附件下载
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {attachments.map((att, index) => (
-                    <FileDownloadButton
+                    <PolicyAttachmentItem
                       key={index}
                       fileUrl={att.url}
                       fileName={att.fileName}
-                      variant="outline"
                     />
                   ))}
                 </div>
