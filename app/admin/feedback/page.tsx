@@ -77,6 +77,7 @@ export default function AdminFeedbackPage() {
   const [replyFeedbackId, setReplyFeedbackId] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [statusUpdateConfirm, setStatusUpdateConfirm] = useState<{ id: string; newStatus: string } | null>(null);
+  const [publicToggleConfirm, setPublicToggleConfirm] = useState<{ id: string; currentIsPublic: boolean } | null>(null);
 
   const selectAllRef = useRef<HTMLInputElement>(null);
 
@@ -200,8 +201,15 @@ export default function AdminFeedbackPage() {
     }
   };
   
-  // 切换展示/隐藏
-  const handleTogglePublic = async (id: string, currentIsPublic: boolean) => {
+  // 切换展示/隐藏（显示确认弹窗）
+  const handleTogglePublic = (id: string, currentIsPublic: boolean) => {
+    setPublicToggleConfirm({ id, currentIsPublic });
+  };
+
+  // 执行展示/隐藏切换
+  const executeTogglePublic = async () => {
+    if (!publicToggleConfirm) return;
+    const { id, currentIsPublic } = publicToggleConfirm;
     try {
       await apiClient.put('/api/admin/feedback', { id, isPublic: !currentIsPublic }, { csrfToken });
       fetchFeedbacks();
@@ -209,6 +217,8 @@ export default function AdminFeedbackPage() {
     } catch (error: any) {
       logger.error('Failed to toggle public:', error);
       showMessage('error', error.message || '操作失败');
+    } finally {
+      setPublicToggleConfirm(null);
     }
   };
 
@@ -793,6 +803,42 @@ export default function AdminFeedbackPage() {
                 </button>
                 <button
                   onClick={executeStatusUpdate}
+                  className="px-6 py-2 text-sm bg-[#b71c1c] text-white rounded-lg hover:bg-[#8b0000] transition-colors font-medium"
+                >
+                  确定
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 展示/隐藏确认弹窗 */}
+      {publicToggleConfirm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setPublicToggleConfirm(null)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-purple-100 rounded-full">
+                <FontAwesomeIcon icon={publicToggleConfirm.currentIsPublic ? faEyeSlash : faEye} className="text-purple-600 text-xl" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">
+                {publicToggleConfirm.currentIsPublic ? '确认隐藏' : '确认展示'}
+              </h3>
+              <p className="text-sm text-gray-600 mb-6 text-center">
+                {publicToggleConfirm.currentIsPublic
+                  ? '确定要将此留言设置为隐藏（不再前端展示）吗？'
+                  : '确定要将此留言设置为展示（前端可见）吗？'}
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setPublicToggleConfirm(null)}
+                  className="px-6 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={executeTogglePublic}
                   className="px-6 py-2 text-sm bg-[#b71c1c] text-white rounded-lg hover:bg-[#8b0000] transition-colors font-medium"
                 >
                   确定
