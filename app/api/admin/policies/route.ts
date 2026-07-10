@@ -97,7 +97,7 @@ export async function POST(request: Request) {
         fileUrls: fileUrls || null,
         fileNames: fileNames || null,
         fileName: body.fileName || null,
-        enableDownload: body.enableDownload || false,
+        enableDownload: true,
         content: content || '',
         isActive,
         orderIndex,

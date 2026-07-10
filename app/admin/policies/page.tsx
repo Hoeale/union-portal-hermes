@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faEdit, faTrash, faSave, faSpinner,
   faTimes, faToggleOn, faToggleOff, faInfoCircle, faFilter,
-  faDownload, faCheck, faXmark
+  faCheck, faXmark
 } from '@fortawesome/free-solid-svg-icons';
 import RichTextEditor from '@/components/admin/rich-text-editor';
 import BatchActionsBar from '@/components/admin/batch-actions-bar';
@@ -132,7 +132,7 @@ function AdminPoliciesPageContent() {
   const [statusConfirmPolicyId, setStatusConfirmPolicyId] = useState<string | null>(null);
   const [statusConfirmTarget, setStatusConfirmTarget] = useState<'pending' | 'published' | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [toggleConfirm, setToggleConfirm] = useState<{ id: string; type: 'active' | 'download'; value: boolean } | null>(null);
+  const [toggleConfirm, setToggleConfirm] = useState<{ id: string; type: 'active'; value: boolean } | null>(null);
   const csrfToken = useCsrfToken();
   const { message, showMessage } = useMessage();
   const [CATEGORIES, setCATEGORIES] = useState<string[]>([
@@ -158,7 +158,7 @@ function AdminPoliciesPageContent() {
     fileUrls: '[]',
     fileNames: '[]',
     attachments: [],
-    enableDownload: false,
+    enableDownload: true,
     content: '',
     isActive: true,
     orderIndex: 0,
@@ -284,7 +284,7 @@ function AdminPoliciesPageContent() {
       fileUrls: '[]',
       fileNames: '[]',
       attachments: [],
-      enableDownload: false,
+      enableDownload: true,
       content: '',
       isActive: true,
       orderIndex: policies.length,
@@ -418,23 +418,15 @@ function AdminPoliciesPageContent() {
     }
   };
 
-  const toggleDownload = async (id: string, enableDownload: boolean) => {
-    setToggleConfirm({ id, type: 'download', value: enableDownload });
-  };
-
   const toggleActive = async (id: string, isActive: boolean) => {
     setToggleConfirm({ id, type: 'active', value: isActive });
   };
 
   const confirmToggle = async () => {
     if (!toggleConfirm) return;
-    
+
     try {
-      if (toggleConfirm.type === 'download') {
-        await apiClient.put('/api/admin/policies', { id: toggleConfirm.id, enableDownload: toggleConfirm.value }, { csrfToken });
-      } else {
-        await apiClient.put('/api/admin/policies', { id: toggleConfirm.id, isActive: toggleConfirm.value }, { csrfToken });
-      }
+      await apiClient.put('/api/admin/policies', { id: toggleConfirm.id, isActive: toggleConfirm.value }, { csrfToken });
       fetchPolicies();
     } catch (error) {
       showMessage('error', '操作失败');
@@ -545,7 +537,6 @@ function AdminPoliciesPageContent() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">分类</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">显示</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">下载</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
                 </tr>
               </thead>
@@ -579,15 +570,6 @@ function AdminPoliciesPageContent() {
                         className="text-gray-400 hover:text-gray-600"
                       >
                         <FontAwesomeIcon icon={policy.isActive ? faToggleOn : faToggleOff} className="text-xl" />
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => toggleDownload(policy.id, !policy.enableDownload)}
-                        className="text-gray-400 hover:text-gray-600"
-                        title={policy.enableDownload ? '禁用附件下载' : '启用附件下载'}
-                      >
-                        <FontAwesomeIcon icon={policy.enableDownload ? faDownload : faXmark} className="text-lg" />
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -862,14 +844,11 @@ function AdminPoliciesPageContent() {
                 <FontAwesomeIcon icon={faInfoCircle} className="text-xl text-blue-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900">
-                确认{toggleConfirm.type === 'active' ? '切换显示状态' : '切换下载状态'}？
+                确认切换显示状态？
               </h3>
             </div>
             <p className="text-sm text-gray-600 mb-2">
-              {toggleConfirm.type === 'active' 
-                ? (toggleConfirm.value ? '启用后，该政策将在前台列表中显示。' : '禁用后，该政策将从前台列表中隐藏。')
-                : (toggleConfirm.value ? '启用后，访客可以下载该政策的附件。' : '禁用后，访客将无法下载该政策的附件。')
-              }
+              {toggleConfirm.value ? '启用后，该政策将在前台列表中显示。' : '禁用后，该政策将从前台列表中隐藏。'}
             </p>
             <p className="text-sm text-gray-600 mb-6">您可以随时再次切换状态。</p>
             <div className="flex gap-3 justify-end">
