@@ -63,7 +63,6 @@ export default function AdminFeedbackPage() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>(
     () => (searchParams.get('filter') as 'all' | 'unread' | 'read') || 'all'
   );
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -76,7 +75,6 @@ export default function AdminFeedbackPage() {
   const [loadingComments, setLoadingComments] = useState(false);
   const [replyFeedbackId, setReplyFeedbackId] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
-  const [statusUpdateConfirm, setStatusUpdateConfirm] = useState<{ id: string; newStatus: string } | null>(null);
   const [publicToggleConfirm, setPublicToggleConfirm] = useState<{ id: string; currentIsPublic: boolean } | null>(null);
 
   const selectAllRef = useRef<HTMLInputElement>(null);
@@ -96,12 +94,6 @@ export default function AdminFeedbackPage() {
     setSelectedIds(new Set());
   };
 
-  const handleStatusFilterChange = (newStatus: string) => {
-    setStatusFilter(newStatus);
-    setPage(1);
-    setSelectedIds(new Set());
-  };
-
   const fetchFeedbacks = async () => {
     try {
       const params = new URLSearchParams({
@@ -109,9 +101,6 @@ export default function AdminFeedbackPage() {
         page: page.toString(),
         pageSize: '10',
       });
-      if (statusFilter !== 'all') {
-        params.set('status', statusFilter);
-      }
       const data = await apiClient.get<any>(`/api/admin/feedback?${params}`);
       setFeedbacks(data.data || []);
       setTotal(data.total || 0);
@@ -134,7 +123,7 @@ export default function AdminFeedbackPage() {
   // 初始加载和筛选条件变化时重新加载
   useEffect(() => {
     fetchFeedbacks();
-  }, [filter, statusFilter, page]);
+  }, [filter, page]);
 
   const fetchComments = async (feedbackId: string) => {
     setLoadingComments(true);
@@ -177,30 +166,6 @@ export default function AdminFeedbackPage() {
     }
   };
 
-  // 更新状态
-  // 请求更新状态（显示确认弹窗）
-  const handleUpdateStatus = (id: string, newStatus: string) => {
-    setStatusUpdateConfirm({ id, newStatus });
-  };
-  
-  // 执行状态更新
-  const executeStatusUpdate = async () => {
-    if (!statusUpdateConfirm) return;
-    const { id, newStatus } = statusUpdateConfirm;
-      
-    try {
-      await apiClient.patch(`/api/admin/feedback/${id}/status`, { status: newStatus }, { csrfToken });
-      fetchFeedbacks();
-      fetchUnreadCount();
-      showMessage('success', `状态已更新为"${STATUS_MAP[newStatus]?.label || newStatus}"`);
-    } catch (error: any) {
-      logger.error('Failed to update status:', error);
-      showMessage('error', error.message || '更新状态失败');
-    } finally {
-      setStatusUpdateConfirm(null);
-    }
-  };
-  
   // 切换展示/隐藏（显示确认弹窗）
   const handleTogglePublic = (id: string, currentIsPublic: boolean) => {
     setPublicToggleConfirm({ id, currentIsPublic });
@@ -418,28 +383,6 @@ export default function AdminFeedbackPage() {
           ))}
         </div>
 
-        {/* Additional Filters */}
-        <div className="flex items-center gap-4 px-6 py-3 border-t border-gray-100 bg-gray-50/50">
-          <span className="text-sm text-gray-500">筛选：</span>
-
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            {Object.entries(STATUS_MAP).map(([key, { label, bgColor, color }]) => (
-              <button
-                key={key}
-                onClick={() => handleStatusFilterChange(statusFilter === key ? 'all' : key)}
-                className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                  statusFilter === key
-                    ? `${bgColor} ${color} border-current`
-                    : 'bg-white text-gray-500 border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Table */}
         <div className="overflow-x-auto">
           {feedbacks.length === 0 ? (
@@ -470,13 +413,13 @@ export default function AdminFeedbackPage() {
               </thead>
               <tbody>
                 {feedbacks.map((fb) => {
-                  const statusInfo = (fb.status ? (STATUS_MAP[fb.status] || null) : null) || (fb.isRead ? STATUS_MAP.read : STATUS_MAP.unread);
+                  const statusInfo = fb.isRead ? STATUS_MAP.read : STATUS_MAP.unread;
 
                   return (
                     <tr
                       key={fb.id}
                       className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-                        fb.status === 'unread' || (!fb.status && !fb.isRead) ? 'bg-red-50/30' : ''
+                        !fb.isRead ? 'bg-red-50/30' : ''
                       } ${selectedIds.has(fb.id) ? 'bg-blue-50/50' : ''}`}
                     >
                       <td className="px-4 py-3 text-center">
@@ -505,22 +448,10 @@ export default function AdminFeedbackPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${statusInfo.bgColor} ${statusInfo.color}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotColor}`}></span>
-                            {statusInfo.label}
-                          </span>
-                          {/* 状态下拉切换 */}
-                          <select
-                            value={fb.status || (fb.isRead ? 'read' : 'unread')}
-                            onChange={(e) => handleUpdateStatus(fb.id, e.target.value)}
-                            className="px-2 py-1 text-xs border border-gray-200 rounded bg-white focus:ring-1 focus:ring-[#b71c1c] focus:border-transparent cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value="unread">未读</option>
-                            <option value="read">已读</option>
-                          </select>
-                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full ${statusInfo.bgColor} ${statusInfo.color}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dotColor}`}></span>
+                          {statusInfo.label}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(fb.createdAt)}</td>
                       <td className="px-4 py-3 text-center">
@@ -689,7 +620,7 @@ export default function AdminFeedbackPage() {
               {(() => {
                 const fb = feedbacks.find(f => f.id === viewContentId);
                 if (!fb) return null;
-                const statusInfo = fb.status ? STATUS_MAP[fb.status] : (fb.isRead ? STATUS_MAP.read : STATUS_MAP.unread);
+                const statusInfo = fb.isRead ? STATUS_MAP.read : STATUS_MAP.unread;
 
                 return (
                   <div className="space-y-4">
@@ -778,39 +709,6 @@ export default function AdminFeedbackPage() {
           }}
           onClose={() => setReplyFeedbackId(null)}
         />
-      )}
-
-      {/* Stats Modal */}
-      {/* 状态更新确认弹窗 */}
-      {statusUpdateConfirm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={() => setStatusUpdateConfirm(null)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
-              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-blue-100 rounded-full">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-blue-600 text-xl" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">确认修改状态</h3>
-              <p className="text-sm text-gray-600 mb-6 text-center">
-                确定要将此留言状态修改为{'\u201C'}<span className="font-semibold text-[#b71c1c]">{STATUS_MAP[statusUpdateConfirm.newStatus]?.label || statusUpdateConfirm.newStatus}</span>{'\u201D'}吗？
-              </p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => setStatusUpdateConfirm(null)}
-                  className="px-6 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={executeStatusUpdate}
-                  className="px-6 py-2 text-sm bg-[#b71c1c] text-white rounded-lg hover:bg-[#8b0000] transition-colors font-medium"
-                >
-                  确定
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* 展示/隐藏确认弹窗 */}
