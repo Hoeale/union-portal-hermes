@@ -107,7 +107,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const recentContent = [...recentNews, ...recentPolicies]
+    const recentNewsTyped = recentNews.map(n => ({ ...n, type: 'news' as const }));
+    const recentPoliciesTyped = recentPolicies.map(p => ({ ...p, type: 'policy' as const }));
+    const recentContent = [...recentNewsTyped, ...recentPoliciesTyped]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5);
 

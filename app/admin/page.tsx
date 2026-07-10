@@ -34,6 +34,7 @@ interface RecentContent {
   title: string;
   status: string;
   createdAt: string;
+  type: 'news' | 'policy';
 }
 
 interface PageViewStats {

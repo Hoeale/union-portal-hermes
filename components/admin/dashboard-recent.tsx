@@ -11,6 +11,7 @@ interface RecentContent {
   title: string;
   status: string;
   createdAt: string;
+  type: 'news' | 'policy';
 }
 
 interface DashboardRecentProps {
@@ -63,10 +64,8 @@ export default function DashboardRecent({ recentContent }: DashboardRecentProps)
     }
   };
 
-  const getTypeIcon = (id: string) => {
-    // 简单判断：根据链接或其他逻辑判断类型
-    // 这里简化处理，实际可以根据额外字段判断
-    return faNewspaper;
+  const getTypeIcon = (item: RecentContent) => {
+    return item.type === 'policy' ? faFileAlt : faNewspaper;
   };
 
   if (recentContent.length === 0) {
@@ -96,14 +95,14 @@ export default function DashboardRecent({ recentContent }: DashboardRecentProps)
           return (
             <Link
               key={item.id}
-              href={`/admin/news/${item.id}/edit`}
+              href={item.type === 'policy' ? `/admin/policies/${item.id}/edit` : `/admin/news/${item.id}/edit`}
               className="block p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3 flex-1 min-w-0">
                   <div className="mt-1">
                     <FontAwesomeIcon
-                      icon={getTypeIcon(item.id)}
+                      icon={getTypeIcon(item)}
                       className="text-gray-400"
                     />
                   </div>
