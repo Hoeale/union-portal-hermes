@@ -309,9 +309,28 @@ export default function LoginLogsTab() {
               <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <p className="text-sm text-gray-700">共 <span className="font-medium">{total}</span> 条记录，当前第 <span className="font-medium">{page}</span> / <span className="font-medium">{totalPages}</span> 页</p>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">上一页</button>
-                    <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">下一页</button>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px items-center">
+                    <button onClick={() => setPage(1)} disabled={page === 1} className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">首页</button>
+                    <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">上一页</button>
+                    <span className="inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm">
+                      <span className="text-gray-500 mr-2">跳至</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        defaultValue={page}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = parseInt((e.target as HTMLInputElement).value);
+                            if (val >= 1 && val <= totalPages) setPage(val);
+                          }
+                        }}
+                        className="w-16 text-center border-none focus:outline-none focus:ring-0 p-0"
+                      />
+                      <span className="text-gray-500 ml-2">页</span>
+                    </span>
+                    <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">下一页</button>
+                    <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">尾页</button>
                   </nav>
                 </div>
               </div>
@@ -362,9 +381,28 @@ export default function LoginLogsTab() {
               <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <p className="text-sm text-gray-700">共 <span className="font-medium">{visitorTotal}</span> 条记录，当前第 <span className="font-medium">{visitorPage}</span> / <span className="font-medium">{visitorTotalPages}</span> 页</p>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button onClick={() => setVisitorPage(Math.max(1, visitorPage - 1))} disabled={visitorPage === 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">上一页</button>
-                    <button onClick={() => setVisitorPage(Math.min(visitorTotalPages, visitorPage + 1))} disabled={visitorPage === visitorTotalPages} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">下一页</button>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px items-center">
+                    <button onClick={() => setVisitorPage(1)} disabled={visitorPage === 1} className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">首页</button>
+                    <button onClick={() => setVisitorPage(Math.max(1, visitorPage - 1))} disabled={visitorPage === 1} className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">上一页</button>
+                    <span className="inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm">
+                      <span className="text-gray-500 mr-2">跳至</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={visitorTotalPages}
+                        defaultValue={visitorPage}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = parseInt((e.target as HTMLInputElement).value);
+                            if (val >= 1 && val <= visitorTotalPages) setVisitorPage(val);
+                          }
+                        }}
+                        className="w-16 text-center border-none focus:outline-none focus:ring-0 p-0"
+                      />
+                      <span className="text-gray-500 ml-2">页</span>
+                    </span>
+                    <button onClick={() => setVisitorPage(Math.min(visitorTotalPages, visitorPage + 1))} disabled={visitorPage === visitorTotalPages} className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">下一页</button>
+                    <button onClick={() => setVisitorPage(visitorTotalPages)} disabled={visitorPage === visitorTotalPages} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">尾页</button>
                   </nav>
                 </div>
               </div>

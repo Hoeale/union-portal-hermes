@@ -59,7 +59,8 @@ export function withAuth(handler: RouteHandler): (request: NextRequest) => Promi
 export function parsePagination(request: NextRequest, defaultPageSize = 20): PaginationParams {
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-  const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || String(defaultPageSize))));
+  const pageSizeParam = parseInt(searchParams.get('pageSize') || String(defaultPageSize));
+  const pageSize = Math.max(1, pageSizeParam > 1000 ? pageSizeParam : Math.min(100, Math.max(1, pageSizeParam)));
   
   return {
     page,
