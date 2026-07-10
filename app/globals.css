@@ -388,13 +388,14 @@
   word-break: break-word;
 }
 
-/* 图片 - 与 wangEditor 编辑器一致：默认 inline、左对齐；
-   宽度/对齐由 wangEditor 内联样式或段落 text-align 控制，不强制居中 */
+/* 图片 - 覆盖 Tailwind Preflight 的 display:block 改为 inline-block，
+   使父段落 text-align:center 能居中图片（wangEditor 图片居中即靠父段落 text-align） */
 .rich-text-content img {
+  display: inline-block;
   max-width: 100%;
   height: auto;
   border-radius: 0.25rem;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 /* 表格 - wangEditor 表格边框依赖外部 CSS，否则前台无边框 */
