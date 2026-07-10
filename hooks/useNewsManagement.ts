@@ -214,21 +214,19 @@ export function useNewsManagement() {
       }
       if (carouselOnly) {
         params.append('is_carousel', 'true');
+        if (statusFilter === 'all') {
+          params.append('status', 'published');
+        }
       }
 
       const response = await fetch(`/api/admin/news?${params}`);
       const result = await response.json();
 
       if (result.success) {
-        const visibleNews = carouselOnly
-          ? result.data.filter((item: News) => item.is_carousel && item.status === 'published')
-          : result.data;
-        const visibleTotal = carouselOnly ? visibleNews.length : result.total;
-
         setNews(result.data);
-        setFilteredNews(visibleNews);
-        setTotalPages(carouselOnly ? Math.max(1, Math.ceil(visibleTotal / pageSize)) : result.totalPages);
-        setTotal(visibleTotal);
+        setFilteredNews(result.data);
+        setTotalPages(result.totalPages);
+        setTotal(result.total);
         // 当无筛选条件时，更新总数（用于统计卡片始终显示真实总数）
         if (categoryFilter === 'all' && !searchTerm && statusFilter === 'all' && !carouselOnly) {
           setTotalAllNews(result.total);
@@ -370,8 +368,11 @@ export function useNewsManagement() {
   // Effects
   useEffect(() => {
     fetchNews();
-    fetchStats();
   }, [statusFilter, currentPage, categoryFilter, carouselOnly, searchVersion]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchCategories();
