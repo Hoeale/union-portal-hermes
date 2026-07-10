@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 最近编辑内容(新闻)
+    // 最近编辑内容(新闻) — 按创建时间倒序
     const recentNews = await prisma.news.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 最近编辑内容(政策)
+    // 最近编辑内容(政策) — 按创建时间倒序
     const recentPolicies = await prisma.policy.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
