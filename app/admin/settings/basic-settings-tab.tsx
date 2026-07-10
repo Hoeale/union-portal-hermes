@@ -56,7 +56,7 @@ export default function BasicSettingsTab() {
     if (oldPassword === newPassword) { setMessage({ type: 'error', text: '新密码不能与旧密码相同' }); return; }
     setLoading(true);
     try {
-      await apiClient.post('/api/admin/change-password', { oldPassword, newPassword }, { csrfToken });
+      await apiClient.post('/api/admin/change-password', { currentPassword: oldPassword, newPassword }, { csrfToken });
       setMessage({ type: 'success', text: '密码修改成功，3秒后跳转登录页' });
       setOldPassword(''); setNewPassword(''); setConfirmPassword('');
       setTimeout(() => { window.location.href = '/admin/login'; }, 3000);
