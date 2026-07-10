@@ -70,13 +70,22 @@ export default function HeadlineSection() {
                     index === currentIndex ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <Image
-                    src={item.image_url}
-                    alt={item.title}
-                    fill
-                    className="object-cover"
-                    priority={index === 0}
-                  />
+                  {item.image_url.startsWith('/uploads/') ? (
+                    /* 本地上传的图片：用原生 img 避免 next/image 优化失败 */
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={item.image_url}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                      priority={index === 0}
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-6">
                     <h3 className="text-white text-xl font-bold line-clamp-2">{item.title}</h3>

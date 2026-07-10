@@ -147,18 +147,29 @@ export default function HeroCarousel({
                   {/* Image */}
                   {item.image_url && !imageErrors.has(item.id) ? (
                     <div className="relative w-full h-full bg-gradient-to-br from-[#b71c1c] to-[#8b0000]">
-                      <Image
-                        src={item.image_url}
-                        alt=""
-                        fill
-                        sizes="(max-width: 1024px) 100vw, 66vw"
-                        priority={index === 0}
-                        className="object-cover pointer-events-none"
-                        onError={() => {
-                          // 图片加载失败时隐藏图片，显示红色渐变背景
-                          setImageErrors(prev => new Set(prev).add(item.id));
-                        }}
-                      />
+                      {item.image_url.startsWith('/uploads/') ? (
+                        /* 本地上传的图片：用原生 img 避免 next/image 优化失败（trailingSlash 干扰） */
+                        <img
+                          src={item.image_url}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                          onError={() => {
+                            setImageErrors(prev => new Set(prev).add(item.id));
+                          }}
+                        />
+                      ) : (
+                        <Image
+                          src={item.image_url}
+                          alt=""
+                          fill
+                          sizes="(max-width: 1024px) 100vw, 66vw"
+                          priority={index === 0}
+                          className="object-cover pointer-events-none"
+                          onError={() => {
+                            setImageErrors(prev => new Set(prev).add(item.id));
+                          }}
+                        />
+                      )}
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
                     </div>
