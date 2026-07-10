@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import FrontendWrapper from '@/components/frontend-wrapper';
@@ -65,32 +65,61 @@ function NewsCenterContent() {
   const [loading, setLoading] = useState(true);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
-  // 获取分类列表
-  useEffect(() => {
-    fetch('/api/news-categories')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setCategories(data);
-          // 优先从 URL 参数获取分类，其次从 localStorage，最后默认第一个
-          if (categoryFromUrl && data.find((c: Category) => c.name === categoryFromUrl)) {
-            setActiveCategory(categoryFromUrl);
-          } else {
-            const savedCategory = localStorage.getItem('news_active_category');
-            if (savedCategory && data.find((c: Category) => c.name === savedCategory)) {
-              setActiveCategory(savedCategory);
-            } else {
-              setActiveCategory(data[0].name);
-            }
-          }
-        }
-        setCategoriesLoaded(true);
-      })
-      .catch(err => {
-        console.error('Failed to fetch categories:', err);
-        setCategoriesLoaded(true);
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/news-categories?_t=${Date.now()}`, {
+        cache: 'no-store',
       });
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        setCategories(data);
+        setActiveCategory((current) => {
+          if (categoryFromUrl && data.find((c: Category) => c.name === categoryFromUrl)) {
+            return categoryFromUrl;
+          }
+
+          if (current && data.find((c: Category) => c.name === current)) {
+            return current;
+          }
+
+          const savedCategory = localStorage.getItem('news_active_category');
+          if (savedCategory && data.find((c: Category) => c.name === savedCategory)) {
+            return savedCategory;
+          }
+
+          return data[0].name;
+        });
+      } else {
+        setCategories([]);
+        setActiveCategory('');
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    } finally {
+      setCategoriesLoaded(true);
+    }
   }, [categoryFromUrl]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    const refreshCategories = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCategories();
+      }
+    };
+
+    window.addEventListener('focus', refreshCategories);
+    document.addEventListener('visibilitychange', refreshCategories);
+
+    return () => {
+      window.removeEventListener('focus', refreshCategories);
+      document.removeEventListener('visibilitychange', refreshCategories);
+    };
+  }, [fetchCategories]);
 
   // 保存选中的分类到 localStorage
   useEffect(() => {
@@ -101,30 +130,47 @@ function NewsCenterContent() {
 
   const currentCategory = categories.find(c => c.name === activeCategory);
 
-  useEffect(() => {
+  const fetchNews = useCallback(async () => {
     if (!activeCategory || !categoriesLoaded) return;
-    
-    const fetchNews = async () => {
-      setLoading(true);
-      try {
-        // 添加时间戳参数绕过缓存
-        const timestamp = Date.now();
-        const response = await fetch(
-          `/api/news?category=${encodeURIComponent(activeCategory)}&page=${pagination.page}&pageSize=${pagination.pageSize}&_t=${timestamp}`
-        );
-        if (response.ok) {
-          const result = await response.json();
-          setNews(result.data || []);
-          setPagination(result.pagination || pagination);
-        }
-      } catch (error) {
-        console.error('Error fetching news:', error);
-      } finally {
-        setLoading(false);
+
+    setLoading(true);
+    try {
+      const timestamp = Date.now();
+      const response = await fetch(
+        `/api/news?category=${encodeURIComponent(activeCategory)}&page=${pagination.page}&pageSize=${pagination.pageSize}&_t=${timestamp}`,
+        { cache: 'no-store' }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        setNews(result.data || []);
+        setPagination((current) => result.pagination || current);
+      }
+    } catch (error) {
+      console.error('Error fetching news:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeCategory, categoriesLoaded, pagination.page, pagination.pageSize]);
+
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
+
+  useEffect(() => {
+    const refreshNews = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNews();
       }
     };
-    fetchNews();
-  }, [activeCategory, categoriesLoaded, pagination.page, pagination.pageSize]);
+
+    window.addEventListener('focus', refreshNews);
+    document.addEventListener('visibilitychange', refreshNews);
+
+    return () => {
+      window.removeEventListener('focus', refreshNews);
+      document.removeEventListener('visibilitychange', refreshNews);
+    };
+  }, [fetchNews]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {

@@ -5,7 +5,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { withCsrfProtection } from '@/lib/csrf';
 import { logOperation } from '@/lib/operation-logger';
 import { logger } from '@/lib/logger';
-import { deleteCache, CACHE_KEYS } from '@/lib/cache';
+import { deleteCache, deleteCacheByPrefix, CACHE_KEYS } from '@/lib/cache';
 
 // Helper: check auth and return unauthorized response if failed
 async function checkAuth(request: NextRequest) {
@@ -16,6 +16,13 @@ async function checkAuth(request: NextRequest) {
     );
   }
   return null;
+}
+
+async function clearPublicNewsCaches() {
+  await deleteCache(CACHE_KEYS.NEWS_LIST);
+  await deleteCacheByPrefix(`${CACHE_KEYS.NEWS_LIST}:`);
+  await deleteCache(CACHE_KEYS.CAROUSEL);
+  await deleteCache(CACHE_KEYS.DASHBOARD);
 }
 
 // GET - Fetch all news with optional category filter, search, and pagination
@@ -211,16 +218,7 @@ export async function POST(request: NextRequest) {
     revalidatePath('/admin/news');
 
     // 清除相关缓存（包括所有带参数的缓存键）
-    await deleteCache(CACHE_KEYS.NEWS_LIST);
-    // 清除带参数的缓存键（category:isCarousel:isNotice:page:pageSize）
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:动态:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:通知:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:公告:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:true:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:false:true:1:10`);
-    await deleteCache(CACHE_KEYS.CAROUSEL);
-    await deleteCache(CACHE_KEYS.DASHBOARD);
+    await clearPublicNewsCaches();
 
     return NextResponse.json({
       success: true,
@@ -334,16 +332,7 @@ export async function PUT(request: NextRequest) {
     revalidatePath('/admin/news');
 
     // 清除相关缓存（包括所有带参数的缓存键）
-    await deleteCache(CACHE_KEYS.NEWS_LIST);
-    // 清除带参数的缓存键（category:isCarousel:isNotice:page:pageSize）
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:动态:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:通知:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:公告:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:true:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:false:true:1:10`);
-    await deleteCache(CACHE_KEYS.CAROUSEL);
-    await deleteCache(CACHE_KEYS.DASHBOARD);
+    await clearPublicNewsCaches();
 
     return NextResponse.json({
       success: true,
@@ -405,16 +394,7 @@ export async function DELETE(request: NextRequest) {
     revalidatePath('/admin/news');
 
     // 清除相关缓存（包括所有带参数的缓存键）
-    await deleteCache(CACHE_KEYS.NEWS_LIST);
-    // 清除带参数的缓存键（category:isCarousel:isNotice:page:pageSize）
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:动态:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:通知:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:公告:false:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:true:false:1:10`);
-    await deleteCache(`${CACHE_KEYS.NEWS_LIST}:all:false:true:1:10`);
-    await deleteCache(CACHE_KEYS.CAROUSEL);
-    await deleteCache(CACHE_KEYS.DASHBOARD);
+    await clearPublicNewsCaches();
 
     return NextResponse.json({
       success: true,

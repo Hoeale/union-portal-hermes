@@ -19,9 +19,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get('category');
+    const categories = searchParams.get('categories');
     const isCarousel = searchParams.get('is_carousel');
-    const isNotice = searchParams.get('is_notice');
-    
+
     // 分页参数（优先使用 page/pageSize，兼容 limit/offset）
     const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : null;
     const pageSize = searchParams.get('pageSize') ? parseInt(searchParams.get('pageSize')!) : null;
@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     const offset = searchParams.get('offset');
 
     // 生成缓存键（包含查询参数）
-    const cacheKey = `${CACHE_KEYS.NEWS_LIST}:${category || 'all'}:${isCarousel || 'false'}:${isNotice || 'false'}:${page || 1}:${pageSize || limit || 10}`;
-    
+    const cacheKey = `${CACHE_KEYS.NEWS_LIST}:${category || categories || 'all'}:${isCarousel || 'false'}:${page || 1}:${pageSize || limit || 10}`;
+
     // 检查缓存
     const cached = await getCache(cacheKey);
     if (cached) {
@@ -45,11 +45,16 @@ export async function GET(request: NextRequest) {
       where.isCarousel = isCarousel === 'true';
     }
 
-    if (isNotice !== null) {
-      where.isNotice = isNotice === 'true';
-    }
+    if (categories) {
+      const categoryList = categories
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
 
-    if (category && category !== 'all') {
+      if (categoryList.length > 0) {
+        where.category = { in: categoryList };
+      }
+    } else if (category && category !== 'all') {
       where.category = category;
     }
 
@@ -66,8 +71,6 @@ export async function GET(request: NextRequest) {
       where,
       orderBy: isCarousel === 'true'
         ? { carouselOrder: 'asc' }  // 轮播图按排序字段升序
-        : isNotice === 'true'
-        ? { publishedAt: 'desc' }   // 通知公告按发布时间降序
         : { publishedAt: 'desc' },  // 普通列表按发布时间降序
       take: currentPageSize,
       skip,
@@ -97,10 +100,10 @@ export async function GET(request: NextRequest) {
           totalPages,
         },
       };
-      
+
       // 缓存结果（ISR: 5分钟重新验证）
       await setCache(cacheKey, responseData, CACHE_TTL.MEDIUM);
-      
+
       // 添加 HTTP 缓存头部，实现类似 ISR 的效果
       const response = NextResponse.json(responseData);
       response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
@@ -109,10 +112,10 @@ export async function GET(request: NextRequest) {
 
     // 兼容旧的 limit/offset 参数
     const responseData = items;
-    
+
     // 缓存结果（ISR: 5分钟重新验证）
     await setCache(cacheKey, responseData, CACHE_TTL.MEDIUM);
-    
+
     // 禁用浏览器/CDN缓存，确保后台修改后立即生效
     const response = NextResponse.json(responseData);
     response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');

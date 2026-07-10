@@ -587,29 +587,6 @@ export function useNewsManagement() {
     }
   };
 
-  // 处理通知切换
-  const handleToggleNotice = async (id: string, currentIsNotice: boolean | undefined) => {
-    if (!csrfToken) {
-      alert('安全令牌未获取，请刷新页面重试');
-      return;
-    }
-    const newIsNotice = !currentIsNotice;
-    try {
-      const response = await fetch('/api/admin/news/', {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify({ id, is_notice: newIsNotice }),
-      });
-      if (response.ok) {
-        fetchNews();
-      } else {
-        alert('更新失败');
-      }
-    } catch (error) {
-      logger.error('Failed to toggle notice:', error);
-      alert('更新失败');
-    }
-  };
 
   return {
     // State
@@ -661,7 +638,6 @@ export function useNewsManagement() {
     handlePreview,
     handlePublish,
     handleUnpublish,
-    handleToggleNotice,
     openCarouselModal,
     autoSortCarouselNews,
     updateCarouselOrder,

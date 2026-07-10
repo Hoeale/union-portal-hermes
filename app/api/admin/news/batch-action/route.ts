@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminSession } from '@/lib/auth';
 import { withCsrfProtection } from '@/lib/csrf';
 import { logger } from '@/lib/logger';
-import { deleteCache, CACHE_KEYS } from '@/lib/cache';
+import { CACHE_KEYS, deleteCache, deleteCacheByPrefix } from '@/lib/cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -128,6 +128,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 清除仪表盘缓存
+    await deleteCache(CACHE_KEYS.NEWS_LIST);
+    await deleteCacheByPrefix(`${CACHE_KEYS.NEWS_LIST}:`);
+    await deleteCache(CACHE_KEYS.CAROUSEL);
     await deleteCache(CACHE_KEYS.DASHBOARD);
 
     return NextResponse.json({

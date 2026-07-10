@@ -6,26 +6,22 @@ import { News } from '@/hooks/useNewsManagement';
 
 interface NewsTableRowProps {
   item: News;
-  categoryFilter: string;
   isSelected: boolean;
   onSelect: () => void;
   onPublish: (id: string) => void;
   onUnpublish: (id: string) => void;
   onPreview: (id: string) => void;
   onDelete: (id: string) => void;
-  onToggleNotice: (id: string, isNotice: boolean | undefined) => void;
 }
 
 export default function NewsTableRow({
   item,
-  categoryFilter,
   isSelected,
   onSelect,
   onPublish,
   onUnpublish,
   onPreview,
   onDelete,
-  onToggleNotice,
 }: NewsTableRowProps) {
   const router = useRouter();
 
@@ -98,34 +94,6 @@ export default function NewsTableRow({
           <span className="text-sm text-gray-400">否</span>
         )}
       </td>
-      {(categoryFilter === '通知要闻' || categoryFilter === '公示公告') && (
-        <td className="px-6 py-4">
-          {item.status === 'pending' ? (
-            <span className="text-sm text-gray-400">—</span>
-          ) : (
-            <button
-              onClick={() => onToggleNotice(item.id, item.is_notice)}
-              className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
-                item.is_notice
-                  ? 'bg-purple-100 text-purple-800 hover:bg-purple-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-              title={item.is_notice ? '点击取消展示到通知公告' : '点击展示到通知公告'}
-            >
-              {item.is_notice ? (
-                <>
-                  <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  是
-                </>
-              ) : (
-                '否'
-              )}
-            </button>
-          )}
-        </td>
-      )}
       <td className="px-6 py-4">
         <div className="text-sm text-gray-500">
           {new Date(item.published_at).toLocaleDateString('zh-CN')}

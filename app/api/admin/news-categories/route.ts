@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isAuthenticated } from '@/lib/auth';
 import { logger } from '@/lib/logger';
+import { CACHE_KEYS, deleteCache } from '@/lib/cache';
 
 // GET: 获取所有新闻分类
 export async function GET(request: NextRequest) {
@@ -98,6 +99,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await deleteCache(CACHE_KEYS.NEWS_CATEGORIES);
+
     return NextResponse.json({
       success: true,
       data: category,
@@ -175,6 +178,9 @@ export async function PUT(request: NextRequest) {
       data: updateData,
     });
 
+    await deleteCache(CACHE_KEYS.NEWS_CATEGORIES);
+    await deleteCache(CACHE_KEYS.NEWS_LIST);
+
     return NextResponse.json({
       success: true,
       data: category,
@@ -227,6 +233,9 @@ export async function DELETE(request: NextRequest) {
     await prisma.newsCategory.delete({
       where: { id },
     });
+
+    await deleteCache(CACHE_KEYS.NEWS_CATEGORIES);
+    await deleteCache(CACHE_KEYS.NEWS_LIST);
 
     return NextResponse.json({
       success: true,

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { isAuthenticated } from '@/lib/auth';
 import { logger } from '@/lib/logger';
+import { CACHE_KEYS, deleteCache, deleteCacheByPrefix } from '@/lib/cache';
 
 // POST - 检查并发布到期的定时新闻
 export async function POST() {
@@ -48,6 +49,10 @@ export async function POST() {
     // 重新验证页面
     revalidatePath('/');
     revalidatePath('/news');
+    await deleteCache(CACHE_KEYS.NEWS_LIST);
+    await deleteCacheByPrefix(`${CACHE_KEYS.NEWS_LIST}:`);
+    await deleteCache(CACHE_KEYS.CAROUSEL);
+    await deleteCache(CACHE_KEYS.DASHBOARD);
 
     console.log(`[Auto-publish] Published ${scheduledNews.length} scheduled news items`);
 

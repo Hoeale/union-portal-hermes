@@ -38,6 +38,14 @@ class MemoryCache {
     this.store.delete(key);
   }
 
+  async deleteByPrefix(prefix: string): Promise<void> {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) {
+        this.store.delete(key);
+      }
+    }
+  }
+
   async flush(): Promise<void> {
     this.store.clear();
   }
@@ -150,6 +158,26 @@ export async function deleteCache(key: string): Promise<void> {
   }
 }
 
+
+export async function deleteCacheByPrefix(prefix: string): Promise<void> {
+  try {
+    if (redis) {
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 100);
+        cursor = nextCursor;
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+      } while (cursor !== '0');
+    } else {
+      await memoryCache.deleteByPrefix(prefix);
+    }
+  } catch (error) {
+    console.error('[Cache] Failed to delete cache by prefix:', error);
+    await memoryCache.deleteByPrefix(prefix);
+  }
+}
 /**
  * 清空缓存
  */

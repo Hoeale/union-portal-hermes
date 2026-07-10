@@ -12,7 +12,6 @@ interface NewsListProps {
   total: number;
   currentPage: number;
   totalPages: number;
-  categoryFilter: string;
   selectedIds: string[];
   onSelectAll: () => void;
   onSelectOne: (id: string) => void;
@@ -20,8 +19,6 @@ interface NewsListProps {
   onUnpublish: (id: string) => void;
   onPreview: (id: string) => void;
   onDelete: (id: string) => void;
-  onDeleteConfirm: (id: string) => void;
-  onToggleNotice: (id: string, isNotice: boolean | undefined) => void;
   onPageChange: (page: number) => void;
   onBatchActionComplete: () => void;
 }
@@ -32,7 +29,6 @@ export default function NewsList({
   total,
   currentPage,
   totalPages,
-  categoryFilter,
   selectedIds,
   onSelectAll,
   onSelectOne,
@@ -40,7 +36,6 @@ export default function NewsList({
   onUnpublish,
   onPreview,
   onDelete,
-  onToggleNotice,
   onPageChange,
   onBatchActionComplete,
 }: NewsListProps) {
@@ -84,9 +79,6 @@ export default function NewsList({
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">分类</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">状态</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">轮播</th>
-              {(categoryFilter === '通知要闻' || categoryFilter === '公示公告') && (
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">是否展示</th>
-              )}
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">发布时间</th>
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">操作</th>
             </tr>
@@ -96,14 +88,12 @@ export default function NewsList({
               <NewsTableRow
                 key={item.id}
                 item={item}
-                categoryFilter={categoryFilter}
                 isSelected={selectedIds.includes(item.id)}
                 onSelect={() => onSelectOne(item.id)}
                 onPublish={onPublish}
                 onUnpublish={onUnpublish}
                 onPreview={onPreview}
                 onDelete={onDelete}
-                onToggleNotice={onToggleNotice}
               />
             ))}
           </tbody>

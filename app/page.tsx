@@ -100,7 +100,9 @@ async function getNoticeNews(limit: number = 6): Promise<NoticeNews[]> {
     const news = await prisma.news.findMany({
       where: {
         status: 'published',
-        isNotice: true,
+        category: {
+          in: ['通知要闻', '公示公告'],
+        },
       },
       orderBy: { publishedAt: 'desc' },
       take: limit,

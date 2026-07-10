@@ -108,7 +108,6 @@ export default function AdminNewsPage() {
           total={newsManager.total}
           currentPage={newsManager.currentPage}
           totalPages={newsManager.totalPages}
-          categoryFilter={newsManager.categoryFilter}
           selectedIds={newsManager.selectedIds}
           onSelectAll={newsManager.handleSelectAll}
           onSelectOne={newsManager.handleSelectOne}
@@ -116,10 +115,8 @@ export default function AdminNewsPage() {
           onUnpublish={newsManager.handleUnpublish}
           onPreview={newsManager.handlePreview}
           onDelete={(id) => newsManager.setDeleteConfirm(id)}
-          onToggleNotice={newsManager.handleToggleNotice}
           onPageChange={newsManager.handlePageChange}
           onBatchActionComplete={newsManager.handleBatchActionComplete}
-          onDeleteConfirm={(id) => newsManager.setDeleteConfirm(id)}
         />
       </div>
 

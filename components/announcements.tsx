@@ -22,7 +22,7 @@ export default function Announcements() {
   const fetchNotices = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/news?is_notice=true&limit=6');
+      const response = await fetch(`/api/news?categories=${encodeURIComponent('通知要闻,公示公告')}&limit=6`);
       if (!response.ok) throw new Error('Failed to fetch notices');
       const data = await response.json();
       setNotices(Array.isArray(data) ? data : data.data || []);

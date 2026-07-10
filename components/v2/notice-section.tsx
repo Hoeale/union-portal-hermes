@@ -21,11 +21,11 @@ interface NoticeSectionProps {
 export default function NoticeSection({ title = '通知公告', limit = 6, notices: propNotices, moreLink = '/news' }: NoticeSectionProps) {
   // 如果传入了 props 数据（SSR 模式），直接使用
   const shouldFetch = !propNotices || propNotices.length === 0;
-  
+
   const { data: fetchedNotices, isLoading: loading } = useSWR<News[]>(
-    shouldFetch ? `/api/news?is_notice=true&limit=${limit}` : null
+    shouldFetch ? `/api/news?categories=${encodeURIComponent('通知要闻,公示公告')}&limit=${limit}` : null
   );
-  
+
   const notices = propNotices && propNotices.length > 0 ? propNotices : (fetchedNotices || []);
 
   const getIcon = (index: number) => {
