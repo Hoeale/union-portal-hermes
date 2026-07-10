@@ -38,9 +38,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      profile: {
+      success: true,
+      data: {
         username: admin.username,
-        email: null, // Admin 表暂无 email 字段
         role: admin.role,
         createdAt: admin.createdAt,
         lastLoginAt: admin.lastLoginAt,
