@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     // Get paginated news
     const news = await prisma.news.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { publishedAt: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
     });
