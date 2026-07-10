@@ -211,10 +211,10 @@ function AdminPoliciesPageContent() {
     }
   };
 
-  const fetchPolicies = async () => {
+  const fetchPolicies = async (p = currentPage) => {
     try {
       const params = new URLSearchParams({
-        page: currentPage.toString(),
+        page: p.toString(),
         pageSize: pageSize.toString(),
       });
       if (filterCategory) {
@@ -243,7 +243,7 @@ function AdminPoliciesPageContent() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchPolicies();
+    fetchPolicies(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -601,23 +601,25 @@ function AdminPoliciesPageContent() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
             <span className="text-sm text-gray-500">
-              第 {currentPage} / {totalPages} 页
+              共 {total} 条，第 {currentPage} / {totalPages} 页
             </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                上一页
-              </button>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                下一页
-              </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => handlePageChange(1)} disabled={currentPage === 1} className="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50">首页</button>
+              <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50">上一页</button>
+              <span className="inline-flex items-center px-2 py-1 text-sm border border-gray-300 rounded">
+                <span className="text-gray-500 mr-1">跳至</span>
+                <input type="number" min={1} max={totalPages} defaultValue={currentPage}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const val = parseInt((e.target as HTMLInputElement).value);
+                      if (val >= 1 && val <= totalPages) handlePageChange(val);
+                    }
+                  }}
+                  className="w-12 text-center border-none focus:outline-none focus:ring-0 p-0" />
+                <span className="text-gray-500 ml-1">页</span>
+              </span>
+              <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50">下一页</button>
+              <button onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50">尾页</button>
             </div>
           </div>
         )}
