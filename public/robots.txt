@@ -1,2 +1,9 @@
 User-agent: *
-Disallow: /
+Allow: /news/
+Allow: /policies/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /view/
+
+Sitemap: https://www.xaszgh.cn/sitemap.xml
