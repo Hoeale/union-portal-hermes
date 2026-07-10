@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faSpinner, faEye } from '@fortawesome/free-solid-svg-icons';
 
@@ -136,21 +134,7 @@ export default function EditorPreviewPage() {
               </h1>
             </div>
 
-            {/* 封面图 */}
-            {previewData.image_url && (
-              <div className="relative w-full h-64 lg:h-96 bg-gray-100">
-                <Image 
-                  src={previewData.image_url} 
-                  alt={previewData.title} 
-                  fill 
-                  className="object-cover" 
-                  priority
-                  unoptimized
-                />
-              </div>
-            )}
-
-            {/* 正文内容 */}
+            {/* 正文内容（不单独显示封面图，正文中的图片即为完整内容） */}
             <div className="p-6 lg:p-8">
               <div
                 className="rich-text-content max-w-none"

@@ -55,6 +55,7 @@ interface NewsFormData {
   image_source_type: 'local' | 'external';
   is_carousel: boolean;
   carousel_order: number;
+  published_at: string; // 发布日期
 }
 
 export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProps) {
@@ -86,6 +87,9 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
     image_source_type: initialData?.image_source_type || ('local' as 'local' | 'external'),
     is_carousel: initialData?.is_carousel ?? false,
     carousel_order: initialData?.carousel_order || 0,
+    published_at: initialData?.publishedAt
+      ? new Date(initialData.publishedAt).toISOString().slice(0, 16) // yyyy-MM-ddTHH:mm
+      : new Date().toISOString().slice(0, 16),
   });
 
   // Fetch CSRF token
@@ -194,6 +198,7 @@ export default function NewsEditor({ mode, newsId, initialData }: NewsEditorProp
         image_source_type: formData.image_source_type,
         is_carousel: formData.is_carousel,
         carousel_order: formData.carousel_order,
+        published_at: formData.published_at || new Date().toISOString(),
         status: 'pending',
         publish_status: 'immediate',
         scheduled_publish_at: null,
@@ -662,6 +667,30 @@ function SettingsPanel({
             />
           </div>
         )}
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-5">
+        <h4 className="text-sm font-semibold text-gray-700 mb-3">发布日期</h4>
+        <div className="flex items-center gap-3">
+          <input
+            type="datetime-local"
+            value={formData.published_at}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, published_at: e.target.value }))
+            }
+            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b71c1c] focus:border-transparent"
+          />
+          <button
+            type="button"
+            onClick={() =>
+              setFormData((prev) => ({ ...prev, published_at: new Date().toISOString().slice(0, 16) }))
+            }
+            className="px-3 py-2 text-xs text-[#b71c1c] border border-[#b71c1c] rounded-lg hover:bg-[#b71c1c] hover:text-white transition-colors"
+          >
+            当前时间
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-gray-500">设置新闻在前端的发布日期，留空则使用当前时间</p>
       </div>
     </div>
   );
