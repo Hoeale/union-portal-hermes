@@ -58,10 +58,10 @@ export default function LoginLogsTab() {
   const [visitorTotalPages, setVisitorTotalPages] = useState(0);
   const [visitorIp, setVisitorIp] = useState('');
 
-  const loadLogs = async () => {
+  const loadLogs = async (p = page) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString() });
+      const params = new URLSearchParams({ page: p.toString(), pageSize: pageSize.toString() });
       if (username) params.append('username', username);
       if (loginType !== 'all') params.append('loginType', loginType);
       if (startDate) params.append('startDate', startDate);
@@ -72,10 +72,10 @@ export default function LoginLogsTab() {
     finally { setLoading(false); }
   };
 
-  const loadVisitorLogs = async () => {
+  const loadVisitorLogs = async (p = visitorPage) => {
     setVisitorLoading(true);
     try {
-      const params = new URLSearchParams({ page: visitorPage.toString(), pageSize: pageSize.toString() });
+      const params = new URLSearchParams({ page: p.toString(), pageSize: pageSize.toString() });
       if (visitorIp) params.append('ip', visitorIp);
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
@@ -102,9 +102,9 @@ export default function LoginLogsTab() {
 
   const handleSearch = () => {
     if (activeSubTab === 'admin') {
-      setPage(1); loadLogs();
+      setPage(1); loadLogs(1);
     } else {
-      setVisitorPage(1); loadVisitorLogs();
+      setVisitorPage(1); loadVisitorLogs(1);
     }
   };
   const handleClear = () => {
@@ -112,19 +112,20 @@ export default function LoginLogsTab() {
     setVisitorIp('');
     setStartDate(''); setEndDate('');
     setPage(1); setVisitorPage(1);
-    setTimeout(() => {
-      if (activeSubTab === 'admin') {
-        loadLogs();
-      } else {
-        loadVisitorLogs();
-      }
-    }, 0);
+    if (activeSubTab === 'admin') {
+      loadLogs(1);
+    } else {
+      loadVisitorLogs(1);
+    }
   };
 
   const handleExport = async () => {
     try {
       if (activeSubTab === 'admin') {
-        const result = await apiClient.get<any>('/api/admin/login-logs?page=1&pageSize=10000');
+        const params = new URLSearchParams({ page: '1', pageSize: '10000' });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        const result = await apiClient.get<any>(`/api/admin/login-logs?${params}`);
         if (result.success) {
           const headers = ['序号', '用户名', 'IP地址', '操作系统', '浏览器', '登录类型', '登录时间'];
           const csvRows = [headers.join(',')];
@@ -138,7 +139,11 @@ export default function LoginLogsTab() {
           link.click();
         }
       } else {
-        const result = await apiClient.get<any>('/api/admin/visitor-logs?page=1&pageSize=10000');
+        const params = new URLSearchParams({ page: '1', pageSize: '10000' });
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        if (visitorIp) params.append('ip', visitorIp);
+        const result = await apiClient.get<any>(`/api/admin/visitor-logs?${params}`);
         if (result.success) {
           const headers = ['序号', 'IP地址', '设备类型', '浏览器', '操作系统', '访问时间'];
           const csvRows = [headers.join(',')];

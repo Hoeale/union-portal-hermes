@@ -42,10 +42,10 @@ export default function OperationLogsTab() {
   const [endDate, setEndDate] = useState('');
   const [selectedLog, setSelectedLog] = useState<OperationLog | null>(null);
 
-  const loadLogs = async () => {
+  const loadLogs = async (p = page) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString() });
+      const params = new URLSearchParams({ page: p.toString(), pageSize: pageSize.toString() });
       if (adminName) params.append('adminName', adminName);
       if (module !== 'all') params.append('module', module);
       if (action !== 'all') params.append('action', action);
@@ -59,12 +59,15 @@ export default function OperationLogsTab() {
 
   useEffect(() => { loadLogs(); }, [page]);
 
-  const handleSearch = () => { setPage(1); loadLogs(); };
-  const handleClear = () => { setAdminName(''); setModule('all'); setAction('all'); setStartDate(''); setEndDate(''); setPage(1); setTimeout(() => loadLogs(), 0); };
+  const handleSearch = () => { setPage(1); loadLogs(1); };
+  const handleClear = () => { setAdminName(''); setModule('all'); setAction('all'); setStartDate(''); setEndDate(''); setPage(1); loadLogs(1); };
 
   const handleExport = async () => {
     try {
-      const result = await apiClient.get<any>('/api/admin/operation-logs?page=1&pageSize=10000');
+      const params = new URLSearchParams({ page: '1', pageSize: '10000' });
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      const result = await apiClient.get<any>(`/api/admin/operation-logs?${params}`);
       if (result.success) {
         const headers = ['序号', '操作人', '业务模块', '操作行为', '操作目标', 'IP地址', '操作时间'];
         const csvRows = [headers.join(',')];
