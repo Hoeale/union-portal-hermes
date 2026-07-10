@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminSession } from '@/lib/auth';
 import { withCsrfProtection } from '@/lib/csrf';
 import { logger } from '@/lib/logger';
+import { deleteCache, CACHE_KEYS } from '@/lib/cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -125,6 +126,9 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
+
+    // 清除仪表盘缓存
+    await deleteCache(CACHE_KEYS.DASHBOARD);
 
     return NextResponse.json({
       success: true,
