@@ -41,6 +41,9 @@ export default function OperationLogsTab() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedLog, setSelectedLog] = useState<OperationLog | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
 
   const loadLogs = async (p = page) => {
     setLoading(true);
@@ -62,11 +65,18 @@ export default function OperationLogsTab() {
   const handleSearch = () => { setPage(1); loadLogs(1); };
   const handleClear = () => { setAdminName(''); setModule('all'); setAction('all'); setStartDate(''); setEndDate(''); setPage(1); loadLogs(1); };
 
+  const handleExportClick = () => {
+    setExportStartDate(startDate);
+    setExportEndDate(endDate);
+    setShowExportModal(true);
+  };
+
   const handleExport = async () => {
+    setShowExportModal(false);
     try {
       const params = new URLSearchParams({ page: '1', pageSize: '10000' });
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
+      if (exportStartDate) params.append('startDate', exportStartDate);
+      if (exportEndDate) params.append('endDate', exportEndDate);
       const result = await apiClient.get<any>(`/api/admin/operation-logs?${params}`);
       if (result.success) {
         const headers = ['序号', '操作人', '业务模块', '操作行为', '操作目标', 'IP地址', '操作时间'];
@@ -77,7 +87,8 @@ export default function OperationLogsTab() {
         const blob = new Blob(['\ufeff' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `操作日志_${new Date().toISOString().split('T')[0]}.csv`;
+        const fileLabel = exportStartDate && exportEndDate ? `${exportStartDate}至${exportEndDate}` : '全部';
+        link.download = `操作日志_${fileLabel}.csv`;
         link.click();
       }
     } catch (error) { logger.error('Failed to export:', error); }
@@ -126,7 +137,7 @@ export default function OperationLogsTab() {
         <div className="mt-4 flex gap-2">
           <button onClick={handleSearch} className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"><FontAwesomeIcon icon={faSearch} className="mr-2" />搜索</button>
           <button onClick={handleClear} className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md"><FontAwesomeIcon icon={faFilter} className="mr-2" />清除筛选</button>
-          <button onClick={handleExport} className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md"><FontAwesomeIcon icon={faDownload} className="mr-2" />导出CSV</button>
+          <button onClick={handleExportClick} className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md"><FontAwesomeIcon icon={faDownload} className="mr-2" />导出CSV</button>
           <button onClick={handleCleanOldLogs} className="inline-flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 hover:bg-red-50 rounded-md"><FontAwesomeIcon icon={faTrash} className="mr-2" />清理旧日志</button>
         </div>
       </div>
@@ -212,6 +223,30 @@ export default function OperationLogsTab() {
               <div className="mt-6 flex justify-end">
                 <button onClick={() => setSelectedLog(null)} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">关闭</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 导出确认弹窗 */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowExportModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">导出操作日志</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">开始日期</label>
+                <input type="date" value={exportStartDate} onChange={(e) => setExportStartDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">结束日期</label>
+                <input type="date" value={exportEndDate} onChange={(e) => setExportEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <p className="text-xs text-gray-500">不选择日期则导出全部日志</p>
+            </div>
+            <div className="mt-6 flex gap-3 justify-end">
+              <button onClick={() => setShowExportModal(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
+              <button onClick={handleExport} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">确认导出</button>
             </div>
           </div>
         </div>
